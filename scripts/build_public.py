@@ -12,6 +12,7 @@ import re
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TMPL = os.path.join(ROOT, "scripts", "app_template.html")
 SCAN = os.path.join(ROOT, "scripts", "scan_core.js")
+EXACTDUP = os.path.join(ROOT, "scripts", "exactdup.js")
 DEMO = os.path.join(ROOT, "scripts", "demo_library.json")
 PACK = os.path.join(ROOT, "scripts", "douban_pack.json")
 DOCS = os.path.join(ROOT, "docs")
@@ -24,7 +25,7 @@ PATH_RE = re.compile(r"[A-Za-z]:[\\/](?![\\/])")  # 盘符路径 C:\/，但放�
 
 
 def main():
-    for p in (TMPL, SCAN, DEMO):
+    for p in (TMPL, SCAN, EXACTDUP, DEMO):
         if not os.path.exists(p):
             raise SystemExit("缺少构建输入：" + p)
 
@@ -50,6 +51,8 @@ def main():
         html = f.read()
     with open(SCAN, "r", encoding="utf-8") as f:
         scan_js = f.read().replace("</", "<\\/")
+    with open(EXACTDUP, "r", encoding="utf-8") as f:
+        exactdup_js = f.read().replace("</", "<\\/")
     pack_js, pack_n = '{"items":[]}', 0
     if os.path.exists(PACK):
         with open(PACK, "r", encoding="utf-8") as f:
@@ -60,11 +63,12 @@ def main():
             pack_n = 0
     html = (html.replace("__LIBRARY_DATA__", payload)
                 .replace("__DOUBAN_PACK__", pack_js)
-                .replace("__SCAN_JS__", scan_js))
+                .replace("__SCAN_JS__", scan_js)
+                .replace("__EXACTDUP_JS__", exactdup_js))
 
     for bad in BAD[:4]:
         assert bad not in html, "成品页面含禁止特征：" + repr(bad)
-    for ph in ("__LIBRARY_DATA__", "__DOUBAN_PACK__", "__SCAN_JS__"):
+    for ph in ("__LIBRARY_DATA__", "__DOUBAN_PACK__", "__SCAN_JS__", "__EXACTDUP_JS__"):
         assert ph not in html, "占位符未替换：" + ph
 
     os.makedirs(DOCS, exist_ok=True)

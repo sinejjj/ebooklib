@@ -130,7 +130,11 @@
     var mx = AUTHOR_MARK_RE.test(x), my = AUTHOR_MARK_RE.test(y);
     if (mx && !my) return x;
     if (my && !mx) return y;
-    if (x.length <= y.length && x.length <= 14) return x;
+    // 中文电子书文件名绝大多数是「书名-作者」。旧的「短者为作者」在两侧等长时
+    // 会把《湘行集-沈从文》解反，导致同一作者的多本书被判成重名、豆瓣也搜不到。
+    // 只有显式的「著 / 作者:」标记才优先，其余默认右侧是作者（与 Python 端一致）。
+    if (/(?:著|编著|译者|作者)\s*[:：]?$/.test(x) && !/(?:著|编著)$/.test(y)) return x;
+    if (/(?:著|编著|译者|作者)\s*[:：]?$/.test(y)) return y;
     return y;
   }
 
@@ -535,6 +539,9 @@
       for await (var entry of handle.values()) {
         if (out.length >= cap) return;
         if (entry.name.endsWith('.sdr')) continue;
+        // 工具自建的隔离目录（删除前的文件副本）不是藏书，重扫时必须跳过，
+        // 否则被删的文件会以「新书」的身份回到书单里。
+        if (entry.name === '.ebooklib-trash' || entry.name.indexOf('.ebooklib-trash-') === 0) continue;
         var rel = prefix + entry.name;
         if (entry.kind === 'directory') { await rec(entry, rel + '/'); continue; }
         var dot = entry.name.lastIndexOf('.');

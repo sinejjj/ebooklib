@@ -133,6 +133,7 @@
 2. 回填只按 `rel`，绝不按 `id`。
 3. `suspect=true` 的条目 `rating/votes` 必须为 `null`（`publisher/pages` 保留）。
 4. **用户个人信息永不出现在任何 `data/*.json` 或成品 HTML 的 payload 里**，只存浏览器本地。
-5. 书库全程只读：脚本只用 `os.scandir` / `os.stat`；`verify_readonly.py --diff` 校验 0 改动。
+5. 扫描链路全程只读：脚本只用 `os.scandir` / `os.stat`；`verify_readonly.py --diff` 校验 0 改动。
+   网页「重复与可删除」是唯一例外：需用户逐份勾选 + 二次确认，且先隔离可恢复，详见 README。
 6. 公开版构建链（`build_public.py`）**不读 `data/`、不读 `config*`、不 import `common`**，
    只依赖 `app_template.html` + `scan_core.js` + `demo_library.json`。

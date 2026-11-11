@@ -342,16 +342,25 @@ def pick_from_candidates(cand):
 
 
 def pick_author_side(x, y):
-    """单连字符分隔时判定哪一侧是作者。"""
+    """单连字符分隔时判定哪一侧是作者。
+
+    中文电子书文件名绝大多数是「书名-作者」。旧规则「短者为作者」在两侧
+    等长时会误判：《湘行集-沈从文》→ title=沈从文 / author=湘行集，
+    同一作者的多本不同书因此共用 title「沈从文」，被合并成一组假重名，
+    豆瓣也用错误的书名去搜。现在只有显式作者标记才优先，其余默认右侧是作者。
+    """
     mx = AUTHOR_MARK_RE.search(x)
     my = AUTHOR_MARK_RE.search(y)
     if mx and not my:
         return x
     if my and not mx:
         return y
-    # 回退：短者为作者
-    if len(x) <= len(y) and len(x) <= 14:
+    # 显式的「作者 著」「作者：」标记
+    if re.search(r"(?:著|编著|译者|作者)\s*[:：]?$", x) and not re.search(r"(?:著|编著)$", y):
         return x
+    if re.search(r"(?:著|编著|译者|作者)\s*[:：]?$", y):
+        return y
+    # 默认：右侧是作者（书名-作者）
     return y
 
 

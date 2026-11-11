@@ -295,6 +295,12 @@ def main():
         # 让浏览器里的已读/我的评分/进度/笔记跟着搬，不丢
         cur_sks = set(x.get("sk") for x in out_books + out_scans)
         rmap, skipped = build_rmap(out_books + out_scans, cur_sks)
+        # 人工补的迁移：标题修正后并入真重名组等 case，自动 ident 比对会因冲突跳过。
+        # 只接受「旧键已不存在、新键确实存在」的单向映射，避免抢别本书的数据。
+        extra = load_json(os.path.join(ROOT, "data", "rmap_extra.json")) or {}
+        for oldsk, newsk in (extra.items() if isinstance(extra, dict) else []):
+            if newsk in cur_sks and oldsk not in cur_sks:
+                rmap[oldsk] = newsk
         if rmap:
             data["rmap"] = rmap
         print(f"  状态迁移表    {len(rmap)} 条（冲突跳过 {skipped} 条）")
@@ -314,6 +320,11 @@ def main():
     if os.path.exists(scan_path):
         with open(scan_path, "r", encoding="utf-8") as f:
             scan_js = f.read().replace("</", "<\\/")
+    exactdup_path = os.path.join(ROOT, "scripts", "exactdup.js")
+    exactdup_js = ""
+    if os.path.exists(exactdup_path):
+        with open(exactdup_path, "r", encoding="utf-8") as f:
+            exactdup_js = f.read().replace("</", "<\\/")
     pack_path = os.path.join(ROOT, "scripts", "douban_pack.json")
     pack_js = '{"items":[]}'
     pack_n = 0
@@ -326,7 +337,8 @@ def main():
             pack_n = 0
     html = (tpl.replace("__LIBRARY_DATA__", payload)
                .replace("__DOUBAN_PACK__", pack_js)
-               .replace("__SCAN_JS__", scan_js))
+               .replace("__SCAN_JS__", scan_js)
+               .replace("__EXACTDUP_JS__", exactdup_js))
     out = out_path()
     with open(out, "w", encoding="utf-8") as f:
         f.write(html)

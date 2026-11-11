@@ -2,17 +2,42 @@
 
 > Turn a local ebook folder into a searchable, deduplicated catalog — entirely in your browser. Nothing is uploaded.
 
-**Source Available · 源码可用** ｜ 单文件离线网页 ｜ 全程只读 ｜ 零上传 · 零账号 · 零后端
+**Source Available · 源码可用** ｜ 单文件离线网页 ｜ 扫描只读 · 删除需逐份勾选 ｜ 零上传 · 零账号 · 零后端
 
 [在线体验](https://sinejjj.github.io/ebooklib/) · [能做什么](#能做什么) · [两种用法](#两种用法) · [快速开始](#快速开始) · [License](#license)
 
 把本地电子书库（mobi / epub / pdf / azw3 / kfx / txt …）变成一份可检索、可查重、可分类、可打分、可记笔记的网页清单。书单、评分、笔记全部留在你自己的浏览器里。
 
+<details>
+<summary><b>English · Quick start</b></summary>
+
+**Ebooklib** turns a folder of local ebooks (mobi / epub / pdf / azw3 / kfx / txt …) into a searchable, deduplicated catalogue that runs entirely in your browser. Nothing is uploaded; no account, no backend.
+
+**Get started**
+1. Open the [online demo](https://sinejjj.github.io/ebooklib/) or double-click the downloaded HTML file.
+2. Click **Choose folder** and grant read access. The browser scans it locally and builds the list.
+3. Use **Sync local library** whenever you move or rename files.
+
+**Language** — the UI ships in Chinese and English. Use the **EN / 中** button in the top bar; the online version follows your browser language automatically. Book titles, authors, paths and notes are never translated.
+
+**What you can do**
+- Copy selected titles and paste them into an AI to find similar books or reading sources
+- Export a compact reading list (title · author · Douban score · my rating · my note) for personalised AI recommendations
+- Rate books, track pages, keep notes and external links, mark books read
+- See duplicate copies side by side (the **Duplicates & Cleanup** button sits in the bottom-right corner), tick the ones to remove and delete them in one batch
+- Full backup / restore moves your list, ratings and notes to another browser or computer
+
+**Privacy & safety** — scanning and syncing are strictly read-only and the file list is never uploaded. Deletion is opt-in only: nothing is pre-selected, every full path is shown in bold and listed before you confirm, files are copied into a restorable `.ebooklib-trash` folder before the originals are removed, and the last batch can be restored. The cleanup page shows exactly where the quarantine folder is; one click copies that path so you can paste it into File Explorer's address bar and open it directly.
+
+The rest of this README is in Chinese; the interface itself is fully bilingual.
+
+</details>
+
 ## 三种典型用法
 
 它不只是"一份书单"。常见的用法是这三件：
 
-1. **把书名喂给 AI，找同类书源** — 在清单里勾几本，点「复制选中书名」，粘贴给 ChatGPT / Claude / Kimi 等：
+1. **把书名喂给 AI，找同类书源** — 在清单里勾几本，点「复制选中书名」，粘贴给 ChatGPT / Claude / DeepSeek 等：
    「这些是我读过的，找同类型的电子书来源」「帮我挑适合做讲书 / 短视频的书」。
    选书、找资料、做内容选题都省得自己一本本翻。
 2. **让 AI 按你的口味推荐** — 点「导出我的阅读清单」，得到一份纯文本：
@@ -36,17 +61,22 @@
 
 ## 能做什么
 
-- **查重**：同名副本、分卷合集、扫描图册分开处理；不同卷不会被误判成重复
+- **查重**：同名副本、分卷合集、扫描图册分开处理；不同卷不会被误判成重复。另会自动识别「**高度疑似完全重复**」——书名、作者、文件大小、格式完全相同但路径不同的副本（多年间 Kindle / 磁盘 / 移动硬盘 / 多台电脑反复复制最易造成的重复），在整理页用醒目标记提示，并支持「保留此路径」一键把其余副本加入待删，你仍可自行调整
 - **检索 / 筛选**：书名、作者、分类、已读、我的评分、豆瓣评分、未匹配豆瓣
 - **评分排序**：豆瓣评分 + 评价人数；匹配不上的书不造假数据，如实显示「未匹配」
-- **内置评分包**：网页里预置了 1300+ 本常见书的豆瓣评分（Top250 + 二十个大类高分榜）。别人下载后扫自己的文件夹，能对上的书自动带评分——浏览器跨不过豆瓣的跨域限制，这是唯一可靠的离线补分方式；对不上的书留空，绝不乱填
-- **个人信息**：我的五星、读了多少页、出版社、外部笔记链接、本地短记、已读 / 标签 / 隐藏
+- **内置评分包**：网页里预置了 1300+ 本常见书的豆瓣评分（Top250 + 二十个大类高分榜 + 已扫书库匹配结果）。这是**构建时内嵌的静态快照，离线、不再实时请求豆瓣**；只能覆盖能把书名+作者对上的书，对不上的书留空、绝不编造数据
+- **个人信息**：我的五星、读了多少页、出版社、外部笔记链接、本地短记、已读 / 标签
 - **搬家识别**：文件挪了位置或改了名，评分和笔记跟着走
 - **导出**：
   - **复制选中书名**：勾选几本后一键复制，直接粘贴给 AI 找同类书源 / 做选题
   - **完整备份**（JSON）：书单 + 豆瓣评分 + 我的评分 + 阅读进度 + 标签 + 笔记，一个文件全带走，换电脑选「恢复」原样还原
   - **导出我的阅读清单**（TXT）：按分类分组，每本一行「书名 · 作者」+「豆瓣 / 我的评分 / 我的评价」（没写评价就不出现这一段）。刻意保持极简，方便直接丢给 AI（Claude / ChatGPT 等）做阅读分析和个性化推荐，不能拿来恢复书库
-- **只读**：绝不修改、移动、重命名或删除书库里的任何文件
+- **扫描严格只读**：扫描、同步、脚本一律只读，绝不修改、移动或重命名书库里的任何文件
+- **中英界面**：顶栏「EN / 中」一键切换；在线版按浏览器语言自动选择。书名、作者、路径、笔记始终原样保留
+- **重复与可删除**：右下角蓝色入口；重名组左右并列，逐份标出书名 / 作者 / 大小 / 完整路径（路径深色加粗高亮），由你自己勾选要删的份（默认全不选、不代判）。
+  另有「**高度疑似完全重复**」组：同一本书在书名 / 作者 / 大小 / 格式完全一致、只是路径不同（不含文件内容哈希比对，依元数据判定）时归为一组，标「高度疑似完全重复 · 仅路径不同」；组内点「**保留此路径**」即把其余副本自动加入待删（仍可手动取消），不预选、不代你删、不替你决定保留哪一份。
+  删除前二次确认并逐条列出路径，先复制进书库内 `.ebooklib-trash` 隔离目录（复制后会校验体积一致）再移除原文件；删除后即从书单彻底移除，不留恢复记录，隔离目录副本由你自己手动清空。
+  页面顶部写明隔离目录的实际位置，**点一下路径即可复制**；浏览器读不到盘符，填一次「书库根目录」后复制的就是可粘贴到资源管理器地址栏、直接打开隔离文件夹的完整路径（填的内容只存你自己的浏览器）。删除完成后路径会自动带上本批次目录名
 
 ## 两种用法
 
@@ -130,13 +160,15 @@ Windows 用户可直接双击根目录的 `重新生成清单.bat`（自动探�
 | 文件名对上但体积不同 | 进「待确认」，可手动认领 |
 | 多个同名文件 | 进「待确认」（防同名不同内容认错） |
 | 体积唯一但文件名变了 | 进「待确认」（疑似改名搬家） |
-| 确实找不到 | 才标「本地已删」并隐藏 |
+| 确实找不到 | 才从书单彻底移除（不留记录、不再显示） |
 
-手工隐藏与「同步判定已删」分开存，同步不会清掉你手工隐藏的条目。分类也不会自动改，只在卡片上提示目录变化。
+同步发现本地已删的书会直接从书单移除，不留记录；分类不会自动改。
 
-## 隐私与只读铁律
+## 隐私与安全边界
 
-- 书库全程只读：脚本只用 `os.scandir` / `os.stat`，`scripts/verify_readonly.py` 用快照 diff 校验 0 改动。
+- **扫描链路**全程只读：脚本只用 `os.scandir` / `os.stat`，`scripts/verify_readonly.py` 用快照 diff 校验 0 改动。
+- **唯一会改动文件的地方**是网页里的「重复与可删除」：必须由你逐份勾选 → 二次确认 → 浏览器请求写入权限后才执行；
+  且先复制到书库内隔离目录并校验大小，再移除原件，隔离目录在后续扫描中会被跳过，不会被当成新书。工具不预选、不自动建议、不生成任何删除脚本。
 - 页面不加载任何 CDN、字体、统计脚本，不发起任何第三方请求。
 - 真实书单、豆瓣缓存、个人备份、本地绝对路径全部被 `.gitignore` 排除。
 - 发布前跑 `python scripts/prepublish_check.py --strict`，模拟 `git add -A` 逐文件检查，0 处泄漏才通过。
@@ -147,6 +179,7 @@ Windows 用户可直接双击根目录的 `重新生成清单.bat`（自动探�
 scripts/
   app_template.html    单文件网页模板（原生 JS，无框架无构建）
   scan_core.js         前端从零扫描：文件名解析 / 分类 / 查重 / 分卷
+  exactdup.js          高度疑似完全重复识别 + 路径合法性校验（纯逻辑，浏览器与 Node 单测共用）
   demo_library.json    脱敏示例书单（人工编造，不含真实数据）
   build_public.py      生成 docs/index.html，不读任何私有数据
   build_html.py        生成本地完整版 HTML

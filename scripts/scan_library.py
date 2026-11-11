@@ -34,7 +34,11 @@ def scan():
 
     for root, dirs, files in os.walk(src_root):
         assert_readonly(root)
-        dirs[:] = [d for d in dirs if not d.endswith(".sdr")]
+        # 工具自建的隔离目录（删除前的文件副本）不是藏书，重扫时跳过
+        dirs[:] = [d for d in dirs
+                   if not d.endswith(".sdr")
+                   and d != ".ebooklib-trash"
+                   and not d.startswith(".ebooklib-trash-")]
         if root.endswith(".sdr"):
             skipped_sdr += 1
             continue
