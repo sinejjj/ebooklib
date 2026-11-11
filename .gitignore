@@ -1,0 +1,27 @@
+# ---- 私有数据（书单 / 豆瓣缓存 / 绝对路径 / 成品页面）----
+/data/
+/reports/
+/_compare_tmp/
+# 根目录成品 HTML 一律排除；公开版页面放 docs/，不受此规则影响
+/*.html
+/config.local.json
+/config.json
+# 含个人评分/隐藏记录的找回备份，勿上传
+/我的书库数据_*.json
+# 公开版页面与演示截图显式放行
+!docs/index.html
+!docs/*.png
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.venv/
+
+# ---- 编辑器 / 系统 ----
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# ---- 本机助手目录 ----
+.workbuddy/

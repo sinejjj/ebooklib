@@ -1,0 +1,14 @@
+{
+  "source_root": "/path/to/your/ebooks",
+  "source_name": "我的书库",
+  "out_html": "我的书库.html",
+  "douban": {
+    "enabled": true,
+    "delay_suggest": [0.6, 1.1],
+    "delay_detail": [1.2, 2.0],
+    "sleep_every": 200,
+    "sleep_seconds": 15,
+    "suggest_threshold": 0.6,
+    "suspect_threshold": 0.5
+  }
+}
