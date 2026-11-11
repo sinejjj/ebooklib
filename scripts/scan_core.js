@@ -21,6 +21,7 @@
                           '.txt', '.doc', '.docx', '.prc', '.chm', '.rtf'];
 
   var NON_BOOK_RE = /(^My Clippings|^已阅书籍|^经典书籍清单|^kindle阅读榜单|^IMG_|^DSC|^IMAG|^\d{3,6}$|^CR!|^EBOK|^B[A-Z0-9]{9,}$)/i;
+  var READ_DIR_MARK = '已阅';   // 与 scan_library.py 保持一致：路径含「已阅」目录即预标已读
   var ASIN_RE = /[_\-\s]?B0[A-Z0-9]{8}\S*$/i;
   var SUFFIX_RE = /(_sample|_copy|_sample\d*|\(\d+\)|（\d+）|kindle正版|kindle版|升级版|珍藏版|典藏版|完整图文版|精编图文版|图文版|v\d+\.\d+|第\d+版|修订版|白金版|纪念版)$/i;
   var NOISE_RE = /(【中亚】|\[中亚\]|通俗说\S*|tongsushuo\.com|www\.\S+|\.com)/gi;
@@ -482,6 +483,11 @@
         if (title.indexOf(short) < 0) title = title + ' · ' + short;
       }
       var sk = makeSk('file', head.rel);
+      var inReadDir = files.some(function (f) {
+        return f.rel.split('/').slice(0, -1).some(function (p) {
+          return p.indexOf(READ_DIR_MARK) >= 0;
+        });
+      });
       cards.push({
         sk: sk,
         id: 'f:' + hash8(sk + '|' + files.length),
@@ -509,7 +515,7 @@
         intro_short: '',
         author_famous: false,
         suspect: false,
-        read: false,
+        read: inReadDir,
         locked_keep: false,
         __src: 'scan'
       });

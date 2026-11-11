@@ -314,7 +314,18 @@ def main():
     if os.path.exists(scan_path):
         with open(scan_path, "r", encoding="utf-8") as f:
             scan_js = f.read().replace("</", "<\\/")
+    pack_path = os.path.join(ROOT, "scripts", "douban_pack.json")
+    pack_js = '{"items":[]}'
+    pack_n = 0
+    if os.path.exists(pack_path):
+        with open(pack_path, "r", encoding="utf-8") as f:
+            pack_js = f.read().replace("</", "<\\/")
+        try:
+            pack_n = len(json.loads(pack_js).get("items") or [])
+        except Exception:
+            pack_n = 0
     html = (tpl.replace("__LIBRARY_DATA__", payload)
+               .replace("__DOUBAN_PACK__", pack_js)
                .replace("__SCAN_JS__", scan_js))
     out = out_path()
     with open(out, "w", encoding="utf-8") as f:
@@ -326,6 +337,7 @@ def main():
     print("=" * 62)
     print(f"  条目        {len(out_books)+len(out_scans)}  (书 {len(out_books)} / 扫描图册 {len(out_scans)})")
     print(f"  有评分      {stats['rated']}")
+    print(f"  评分包      {pack_n} 本（供无豆瓣数据的用户自动补分）")
     print(f"  知名作者    {stats['famous']}")
     print(f"  待归类      {stats['pending']}")
     print(f"  存疑        {stats['suspect']}")

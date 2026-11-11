@@ -5,218 +5,335 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>本地书库管理 · 电子图书馆</title>
 <style>
+/* ============================================================
+   本地书库管理 · 视觉系统
+   方向：白纸 + 钴蓝 + 1px 细线 + 小圆角 + 极轻阴影 + 衬线标题
+   令牌先行：颜色 / 圆角 / 阴影全部走变量，组件不写死色值。
+   ============================================================ */
 :root{
-  --bg:#f5f6f8; --panel:#ffffff; --line:#e3e6ea; --line2:#eef0f3;
-  --txt:#1f2328; --txt2:#5b6470; --txt3:#8b949e;
-  --accent:#2f6fd0; --accent-soft:#eaf1fc;
-  --dup:#d93025; --dup-soft:#fdeceb;
-  --keep:#1a7f45; --keep-soft:#e8f5ed;
-  --warn:#b26a00; --warn-soft:#fdf3e3;
-  --r9:#b8372b; --r8:#d97706; --r7:#1a7f45; --r6:#6b7280; --r0:#b8bfc7;
+  /* 底与面：浅灰蓝底 + 白面，靠层次而不是靠纯白留白 */
+  --bg:#ebeef6; --panel:#ffffff; --paper2:#f7f8fc; --paper3:#eceef5;
+  --line:#e2e5ee; --line2:#edeff5;
+  --txt:#1a1d29; --txt2:#616779; --txt3:#949aab;
+  /* 主色：低饱和钴蓝，只用于文字与小面积强调 */
+  --accent:#4056c8; --accent-deep:#33459f; --accent-soft:#eef1fd;
+  --accent-tint:#f4f6fe; --accent-line:#d8ddf5; --accent-ink:#2f3f94;
+  /* 语义色：低饱和，只在需要区分时出场 */
+  --dup:#b8473c; --dup-soft:#fdf3f2; --dup-line:#f0cac6;
+  --keep:#0f6e73; --keep-soft:#eef7f7; --keep-line:#c3e0e2;
+  --warn:#9a6413; --warn-soft:#fdf8ee; --warn-line:#efdcb4;
+  --gold:#c98a06;
+  --r9:#b8473c; --r8:#c07a12; --r7:#0f6e73; --r6:#616779; --r0:#949aab;
+  /* 形：小圆角 + 极轻阴影 */
+  --radius:8px; --radius-sm:6px;
+  --shadow1:0 1px 3px rgba(22,26,48,.06),0 0 0 1px rgba(22,26,48,.02);
+  --shadow2:0 18px 44px -24px rgba(22,26,48,.34);
+  --hair:1px solid var(--line);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
+  --serif:"Source Han Serif SC","Noto Serif SC","Songti SC","STSong","SimSun",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 body{
-  background:var(--bg); color:var(--txt);
-  font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
-  -webkit-font-smoothing:antialiased;
+  background:
+    linear-gradient(rgba(26,34,68,.018) 1px,transparent 1px) 0 0/100% 40px,
+    radial-gradient(1000px 420px at 84% -14%,rgba(64,86,200,.05),transparent 62%),
+    var(--bg);
+  background-attachment:fixed;
+  color:var(--txt);font:14px/1.65 var(--sans);-webkit-font-smoothing:antialiased;
 }
 button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 button{cursor:pointer}
 
+/* ---------------- 顶栏：白面浮在灰底上，衬线标识 + 蓝色方块 ---------------- */
 header{
   position:sticky;top:0;z-index:50;background:var(--panel);
-  border-bottom:1px solid var(--line);padding:10px 18px;
-  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  border-bottom:var(--hair);padding:11px 22px;min-height:60px;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
 }
-.logo{font-size:16px;font-weight:700;letter-spacing:.5px;white-space:nowrap}
-.logo small{font-weight:400;color:var(--txt3);font-size:12px;margin-left:6px}
-.search{flex:1;min-width:180px;max-width:420px;position:relative}
-.search input{width:100%;padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:#fbfcfd;outline:none}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--serif);font-size:16px;font-weight:700;
+  letter-spacing:.02em;white-space:nowrap;color:var(--txt)}
+.logo-mark{
+  width:30px;height:30px;flex:0 0 30px;display:grid;place-items:center;
+  font-family:var(--serif);font-size:15px;color:#fff;font-weight:700;border-radius:var(--radius);
+  background:linear-gradient(150deg,#5570dd,var(--accent));
+}
+.logo small{font-family:var(--sans);font-weight:400;color:var(--txt3);font-size:12px;margin-left:2px;
+  letter-spacing:.01em}
+.search{flex:1 1 220px;min-width:180px;max-width:360px;position:relative}
+.search input{width:100%;padding:7px 12px;border:var(--hair);border-radius:var(--radius-sm);
+  background:var(--paper2);outline:none;font-size:13px;transition:border-color .14s,background .14s}
 .search input:focus{border-color:var(--accent);background:#fff}
 .spacer{flex:1}
-.ctl{display:flex;align-items:center;gap:6px;white-space:nowrap}
-.ctl label{color:var(--txt2);font-size:12px}
-select,.btn{padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;outline:none}
-.btn:hover{border-color:var(--accent);color:var(--accent)}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn.primary:hover{background:#2860b8;color:#fff}
+.ctl{display:flex;align-items:center;gap:8px;white-space:nowrap;flex-wrap:wrap}
+.ctl label{color:var(--txt3);font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+select,.btn{
+  padding:7px 13px;border:var(--hair);border-radius:var(--radius-sm);background:var(--panel);
+  outline:none;font-size:12.5px;font-weight:600;letter-spacing:.02em;color:var(--txt2);
+  white-space:nowrap;
+  transition:background .14s,color .14s,border-color .14s,box-shadow .14s;
+}
+select:hover{border-color:var(--accent-line);color:var(--accent)}
+.btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-tint)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;
+  box-shadow:0 1px 2px rgba(52,70,160,.18)}
+.btn.primary:hover{background:var(--accent-deep);border-color:var(--accent-deep);color:#fff}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 
-.wrap{display:flex;align-items:flex-start;gap:0;max-width:1600px;margin:0 auto}
-aside{width:236px;flex:0 0 236px;position:sticky;top:57px;height:calc(100vh - 57px);overflow-y:auto;background:var(--panel);border-right:1px solid var(--line);padding:14px 12px 40px}
-aside h4{margin:16px 0 8px;font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:1px;text-transform:uppercase}
+/* ---------------- 侧栏：白面 + 细线，选中项淡蓝底 + 左侧蓝条 ----------------
+   整页铺满：旧版把 .wrap 锁在 1680px 居中，宽屏两侧空出两大块灰底，
+   形成「上下通栏、中间一条」的工字布局。现在侧栏 + 内容区始终撑满视口。 */
+.wrap{display:flex;align-items:flex-start;gap:0;width:100%;max-width:none;margin:0}
+aside{
+  width:clamp(228px,15vw,300px);flex:0 0 clamp(228px,15vw,300px);
+  position:sticky;top:60px;height:calc(100vh - 60px);
+  overflow-y:auto;background:var(--panel);border-right:var(--hair);
+  padding:22px clamp(12px,1vw,20px) 48px;
+}
+aside h4{margin:22px 0 8px;font-size:9.5px;font-weight:700;color:var(--txt3);letter-spacing:.16em;
+  text-transform:uppercase;padding-left:12px}
 aside h4:first-child{margin-top:0}
-.cat{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:7px;cursor:pointer;user-select:none}
-.cat:hover{background:#f2f4f7}
-.cat.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
-.cat .cnt{margin-left:auto;font-size:11px;color:var(--txt3)}
+.cat{position:relative;display:flex;align-items:center;gap:8px;padding:6px 10px 6px 12px;
+  border-radius:var(--radius-sm);cursor:pointer;user-select:none;color:var(--txt2);font-size:13px;
+  transition:background .14s,color .14s}
+.cat:hover{background:var(--paper2);color:var(--txt)}
+.cat.on{background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.cat.on::before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:2px;border-radius:2px;
+  background:var(--accent)}
+.cat .cnt{margin-left:auto;font-size:11px;color:var(--txt3);font-variant-numeric:tabular-nums}
 .cat.on .cnt{color:var(--accent)}
-.chk{display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:7px;cursor:pointer}
-.chk:hover{background:#f2f4f7}
+.chk{display:flex;align-items:center;gap:8px;padding:5px 10px 5px 12px;border-radius:var(--radius-sm);
+  cursor:pointer;color:var(--txt2);font-size:12.5px;transition:background .14s,color .14s}
+.chk:hover{background:var(--paper2);color:var(--txt)}
 .chk input{accent-color:var(--accent)}
-aside .mini{font-size:12px;color:var(--txt3);padding:4px 8px;line-height:1.5}
+aside .mini{font-size:11.5px;color:var(--txt3);padding:6px 12px;line-height:1.7}
 
-main{flex:1;min-width:0;padding:14px 18px 80px}
-.statbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:9px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:12px;font-size:13px;color:var(--txt2)}
-.statbar b{color:var(--txt);font-weight:600}
+/* ---------------- 内容区 ---------------- */
+main{flex:1;min-width:0;padding:26px clamp(20px,2.2vw,46px) 96px}
+.statbar{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  padding:12px 18px;background:var(--panel);border:var(--hair);border-radius:var(--radius);
+  margin-bottom:18px;font-size:12.5px;color:var(--txt2);box-shadow:var(--shadow1);
+}
+.statbar b{color:var(--txt);font-weight:600;font-family:var(--serif);font-size:15px}
 .statbar .sep{width:1px;height:14px;background:var(--line)}
 
-.list{display:flex;flex-direction:column;gap:8px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 13px;display:flex;gap:11px;align-items:flex-start}
-.card:hover{border-color:#cdd4dc}
-.card.sel{border-color:var(--accent);background:#fbfdff}
+/* ---------------- 卡片：白面 + 细线 + 极轻阴影 ---------------- */
+.list{display:flex;flex-direction:column;gap:10px}
+/* 宽屏自动分列：整行等高、卡片同尺寸，既不拉成长带，也不留锯齿状空洞 */
+@media(min-width:1900px){
+  .list{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,760px),1fr));
+    grid-auto-rows:minmax(174px,auto);align-items:stretch;gap:10px;
+  }
+  .list .card{min-width:0}
+  /* 书名 / 一句话介绍限制行数，个别超长条目不会把整张网格撑高 */
+  .list .nm,.list .oneline{display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+  .list .nm{-webkit-line-clamp:2}
+  .list .oneline{-webkit-line-clamp:2}
+  /* 内容区撑满卡片高度，把「我的评分 / 进度」统一压到底线，视觉更齐 */
+  .list .card>.body{align-self:stretch;display:flex;flex-direction:column}
+  .list .card>.body>.myrow{margin-top:auto}
+}
+/* 窄屏：侧栏移到顶部，主内容仍占满宽度 */
+@media(max-width:760px){
+  .wrap{flex-direction:column}
+  aside{position:static;width:100%;flex:none;height:auto;max-height:42vh;
+    border-right:0;border-bottom:var(--hair)}
+  main{width:100%;padding:18px 14px 110px}
+  header{padding:10px 14px}
+  footer{padding:9px 14px}
+}
+.card{
+  background:var(--panel);border:var(--hair);border-radius:var(--radius);padding:13px 16px;
+  display:flex;gap:14px;align-items:flex-start;box-shadow:var(--shadow1);
+  transition:border-color .14s,box-shadow .14s,background .14s;
+}
+.card:hover{border-color:var(--accent-line);box-shadow:0 2px 10px rgba(22,26,48,.07)}
+.card.sel{border-color:var(--accent);background:var(--accent-tint)}
 .card.dup{border-left:3px solid var(--dup)}
 .card.gone{opacity:.55}
 .pick{margin-top:3px;accent-color:var(--accent);width:15px;height:15px;flex:0 0 15px}
-.rating{flex:0 0 58px;text-align:center;padding:5px 2px;border-radius:8px;font-weight:700;font-size:15px;line-height:1.12;font-variant-numeric:tabular-nums}
-.rating .lbl{display:block;font-size:8.5px;font-weight:400;opacity:.55;margin-top:1px;letter-spacing:.2px}
-.rating .vt{display:block;font-size:10px;font-weight:400;color:var(--txt2);opacity:.95;margin-top:2px;white-space:nowrap}
+.rating{flex:0 0 74px;text-align:center;padding:7px 5px;border-radius:var(--radius-sm);
+  font-family:var(--serif);font-weight:700;font-size:17px;line-height:1.1;font-variant-numeric:tabular-nums}
+.rating .lbl{display:block;font-family:var(--sans);font-size:8.5px;font-weight:400;opacity:.6;
+  margin-top:2px;letter-spacing:.16em;text-transform:uppercase}
+.rating .vt{display:block;font-family:var(--sans);font-size:9.5px;font-weight:400;color:var(--txt2);
+  margin-top:3px;white-space:nowrap;letter-spacing:.02em}
 .body{flex:1;min-width:0}
-.nm{font-size:15px;font-weight:600;line-height:1.45;word-break:break-word}
-.nm .au{color:var(--accent)}
-.chip{display:inline-block;font-size:11px;padding:1px 7px;border-radius:20px;background:#f0f2f5;color:var(--txt2);margin-right:5px;vertical-align:2px}
-.chip.dup{background:var(--dup-soft);color:var(--dup);font-weight:600}
-.chip.keep{background:var(--keep-soft);color:var(--keep)}
-.chip.read{background:var(--accent-soft);color:var(--accent)}
-.chip.scan{background:#f3eefe;color:#6b46c1}
-.chip.vol{background:#eef2ff;color:#4f46e5;font-weight:600}
-.chip.warn{background:var(--warn-soft);color:var(--warn);font-weight:600}
-.chip.del{background:#eef0f3;color:#6b7280}
-.oneline{color:var(--txt2);font-size:13px;margin-top:4px;word-break:break-word}
-.meta{color:var(--txt3);font-size:12px;margin-top:5px;display:flex;gap:10px;flex-wrap:wrap}
-.acts{display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex:0 0 auto}
-.mini-btn{border:1px solid var(--line);background:#fff;border-radius:6px;padding:3px 8px;font-size:11px;color:var(--txt2);white-space:nowrap}
-.mini-btn:hover{border-color:var(--accent);color:var(--accent)}
-.mini-btn.on{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+.nm{font-size:15px;font-weight:600;line-height:1.45;word-break:break-word;color:var(--txt)}
+.nm .au{color:var(--accent);font-weight:600}
+/* 芯片：小圆角细线标签，不做大色块 */
+.chip{display:inline-block;font-size:10.5px;padding:2px 8px;border-radius:4px;
+  background:var(--paper2);border:var(--line);color:var(--muted);margin-right:5px;vertical-align:2px;
+  letter-spacing:.04em;font-weight:600}
+.chip.dup{background:var(--dup-soft);color:var(--dup);border-color:var(--dup-line)}
+.chip.keep{background:var(--keep-soft);color:var(--keep);border-color:var(--keep-line)}
+.chip.read{background:var(--accent-soft);color:var(--accent-deep);border-color:var(--accent-line)}
+.chip.scan{background:#f3f0fd;color:#5b3fb0;border-color:#ddd5f5}
+.chip.vol{background:var(--accent-soft);color:var(--accent-deep);border-color:var(--accent-line)}
+.chip.warn{background:var(--warn-soft);color:var(--warn);border-color:var(--warn-line)}
+.chip.del{background:var(--paper2);color:var(--txt3)}
+.chip.notes{background:var(--keep-soft);color:var(--keep);border-color:var(--keep-line)}
+.chip.moved{background:var(--accent-soft);color:var(--accent-deep);border-color:var(--accent-line)}
+.oneline{color:var(--txt2);font-size:13px;margin-top:5px;word-break:break-word}
+.meta{color:var(--txt3);font-size:11.5px;margin-top:6px;display:flex;gap:12px;flex-wrap:wrap}
+.acts{display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex:0 0 auto}
+.mini-btn{border:var(--hair);background:var(--panel);border-radius:var(--radius-sm);padding:3px 9px;
+  font-size:11px;color:var(--txt2);white-space:nowrap;transition:border-color .14s,color .14s,background .14s}
+.mini-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-tint)}
+.mini-btn.on{background:var(--warn-soft);border-color:var(--warn-line);color:var(--warn);font-weight:600}
 
-.copies{margin-top:9px;border-top:1px dashed var(--line);padding-top:8px;display:none}
+.copies{margin-top:10px;border-top:var(--hair);padding-top:9px;display:none}
 .copies.show{display:block}
 .copy{display:flex;align-items:center;gap:9px;padding:4px 0;font-size:12px;color:var(--txt2)}
-.copy .p{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--txt3);word-break:break-all;flex:1}
-.copy .e{background:#f0f2f5;border-radius:4px;padding:0 5px;font-size:10px;color:var(--txt2)}
+.copy .p{font-family:var(--mono);font-size:11px;color:var(--txt3);word-break:break-all;flex:1}
+.copy .e{background:var(--paper2);border:var(--hair);border-radius:4px;padding:0 5px;font-size:10px;color:var(--txt2)}
 
-.tags{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
-.tag{font-size:11px;padding:2px 9px;border-radius:20px;border:1px solid var(--line);background:#fff;color:var(--txt3)}
+.tags{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}
+.tag{font-size:10.5px;padding:2px 9px;border-radius:4px;border:var(--hair);background:var(--panel);
+  color:var(--txt3);letter-spacing:.04em;font-weight:600;transition:border-color .14s,color .14s,background .14s}
 .tag:hover{border-color:var(--accent);color:var(--accent)}
-.tag.on{background:var(--warn-soft);border-color:var(--warn);color:var(--warn);font-weight:600}
-.tag.on.k{background:var(--keep-soft);border-color:var(--keep);color:var(--keep)}
-.chip.notes{background:var(--keep-soft);color:var(--keep)}
-.chip.moved{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.tag.on{background:var(--warn-soft);border-color:var(--warn-line);color:var(--warn)}
+.tag.on.k{background:var(--keep-soft);border-color:var(--keep-line);color:var(--keep)}
 
 /* 待确认面板 */
-.amb{border:1px solid var(--warn);background:var(--warn-soft);border-radius:8px;padding:8px;margin-top:8px;font-size:12px;max-height:340px;overflow:auto}
-.amb .ambHead{display:flex;justify-content:space-between;align-items:center;font-weight:600;color:var(--warn);margin-bottom:6px}
-.amb .ambItem{border-top:1px dashed #e3c98f;padding:6px 0}
+.amb{border:var(--hair);border-left:3px solid var(--warn);background:var(--warn-soft);border-radius:var(--radius);
+  padding:11px 13px;margin-top:9px;font-size:12px;max-height:340px;overflow:auto}
+.amb .ambHead{display:flex;justify-content:space-between;align-items:center;font-weight:700;color:var(--warn);
+  margin-bottom:6px;letter-spacing:.02em}
+.amb .ambItem{border-top:1px dashed var(--warn-line);padding:7px 0}
 .amb .ambItem .t{font-weight:600;color:var(--txt)}
 .amb .ambItem .rs{font-weight:400;color:var(--warn);margin-left:6px;font-size:11px}
 .amb .ambItem .o{color:var(--txt3);font-size:11px;word-break:break-all;margin-top:2px}
 .amb .ambItem .o.sm{opacity:.8}
-.amb .ambItem .cs{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
-.amb .mini-btn{background:#fff}
+.amb .ambItem .cs{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.amb .mini-btn{background:var(--panel)}
 
 /* 我的标记行：5 星 + 阅读进度 */
-.myrow{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:6px;min-height:20px}
+.myrow{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:8px;min-height:20px}
 .myrow.idle{opacity:.5}
 .mine{display:flex;align-items:center;gap:6px}
-.mine .lb{font-size:11px;color:var(--txt3)}
+.mine .lb{font-size:10.5px;color:var(--txt3);letter-spacing:.08em;text-transform:uppercase;font-weight:600}
 .stars{display:inline-flex;gap:2px;user-select:none;line-height:1}
-.stars b{font-size:15px;font-weight:400;color:#d3d8de;cursor:pointer;padding:1px;transition:color .1s,transform .1s}
-.stars b.on{color:#e0a300}
-.stars b.half{background:linear-gradient(90deg,#e0a300 50%,#d3d8de 50%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.stars b{font-size:15px;font-weight:400;color:#d7dbe4;cursor:pointer;padding:1px;transition:color .1s,transform .1s}
+.stars b.on{color:var(--gold)}
+.stars b.half{background:linear-gradient(90deg,var(--gold) 50%,#d7dbe4 50%);-webkit-background-clip:text;
+  background-clip:text;color:transparent}
 .stars b:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-radius:3px}
 @media(hover:hover){.stars b:hover{transform:scale(1.18)}}
 @media(hover:none){.stars b{padding:6px 3px;font-size:18px}}
-.prog{display:flex;align-items:center;gap:7px;min-width:0}
+.prog{display:flex;align-items:center;gap:8px;min-width:0}
 .prog .pt{font:inherit;font-size:11px;color:var(--txt2);font-variant-numeric:tabular-nums;
   background:none;border:0;border-bottom:1px dashed var(--line);padding:0 0 1px;cursor:pointer}
 .prog .pt:hover{color:var(--accent);border-bottom-color:var(--accent)}
 .prog .pt.none{color:var(--txt3);border-bottom-color:transparent}
 .prog .pt.over{color:var(--warn);border-bottom-color:var(--warn)}
-.bar{display:block;width:96px;height:5px;border-radius:3px;background:var(--line2);overflow:hidden}
+.bar{display:block;width:96px;height:6px;border-radius:3px;background:var(--paper3);overflow:hidden}
 .bar>b{display:block;height:100%;background:var(--accent);border-radius:3px;transition:width .18s}
 .bar>b.full{background:var(--keep)}
 .bar.empty{background:none;border-top:1px dashed var(--line);height:0}
 .meta .pub.none{opacity:.6}
 
-/* 笔记抽屉 */
-.scrim{position:fixed;inset:0;background:rgba(20,24,30,.26);z-index:79;opacity:0;pointer-events:none;transition:opacity .2s}
+/* ---------------- 详情抽屉 ---------------- */
+.scrim{position:fixed;inset:0;background:rgba(26,29,41,.28);z-index:79;opacity:0;pointer-events:none;
+  transition:opacity .2s}
 .scrim.show{opacity:1;pointer-events:auto}
-.drawer{position:fixed;top:0;right:0;z-index:80;width:min(440px,94vw);height:100vh;background:var(--panel);
-  border-left:1px solid var(--line);box-shadow:-8px 0 28px rgba(0,0,0,.10);
+.drawer{position:fixed;top:0;right:0;z-index:80;width:min(460px,94vw);height:100vh;background:var(--panel);
+  border-left:var(--hair);box-shadow:var(--shadow2);
   transform:translateX(102%);transition:transform .22s ease;display:flex;flex-direction:column}
 .drawer.show{transform:none}
-.dhead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
-.dhead b{font-size:14px;line-height:1.4;word-break:break-word}
-.dbody{flex:1;overflow-y:auto;padding:4px 14px 30px}
-.dbody section{padding:13px 0;border-bottom:1px solid var(--line2)}
+.dhead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:14px 18px;
+  border-bottom:var(--hair)}
+.dhead b{font-family:var(--serif);font-size:15px;line-height:1.45;word-break:break-word;font-weight:700}
+.dbody{flex:1;overflow-y:auto;padding:2px 18px 34px}
+.dbody section{padding:15px 0;border-bottom:var(--hair)}
 .dbody section:last-child{border-bottom:0}
-.dbody h5{margin:0 0 9px;font-size:11px;color:var(--txt3);letter-spacing:1px;font-weight:700}
+.dbody h5{margin:0 0 10px;font-size:9.5px;color:var(--txt3);letter-spacing:.16em;font-weight:700;
+  text-transform:uppercase}
 .drow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .drow input[type=number]{width:88px}
 .drow input[type=url]{flex:1;min-width:150px}
 .dbody input[type=number],.dbody input[type=url],.dbody textarea{
-  padding:6px 9px;border:1px solid var(--line);border-radius:7px;background:#fbfcfd;outline:none;font-size:13px}
+  padding:7px 10px;border:var(--hair);border-radius:var(--radius-sm);background:var(--paper2);
+  outline:none;font-size:13px;transition:border-color .14s,background .14s}
 .dbody input:focus,.dbody textarea:focus{border-color:var(--accent);background:#fff}
-.dbody textarea{width:100%;min-height:170px;resize:vertical;font:13px/1.7 inherit}
-.bar.big{width:100%;height:7px;margin:9px 0 6px}
-.dhint{font-size:11px;color:var(--txt3);line-height:1.6;margin-top:6px}
+.dbody textarea{width:100%;min-height:170px;resize:vertical;font:13px/1.75 var(--sans)}
+.bar.big{width:100%;height:7px;margin:10px 0 6px}
+.dhint{font-size:11px;color:var(--txt3);line-height:1.7;margin-top:7px}
 .dhint b{color:var(--txt2)}
 
-.empty{padding:50px 0;text-align:center;color:var(--txt3)}
+.empty{padding:64px 24px;text-align:center;color:var(--txt3);font-size:13px;
+  border:1px dashed var(--line);border-radius:var(--radius);background:rgba(255,255,255,.55)}
 
-footer{position:fixed;bottom:0;left:0;right:0;z-index:60;background:var(--panel);border-top:1px solid var(--line);padding:9px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 -2px 10px rgba(0,0,0,.04)}
-footer .n{font-size:13px;color:var(--txt2)}
-footer .n b{color:var(--accent);font-size:15px}
+footer{position:fixed;bottom:0;left:0;right:0;z-index:60;background:var(--panel);border-top:var(--hair);
+  padding:10px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  box-shadow:0 -2px 12px rgba(22,26,48,.04)}
+footer .n{font-size:12.5px;color:var(--txt2)}
+footer .n b{color:var(--accent);font-family:var(--serif);font-size:16px}
 .hint{font-size:11px;color:var(--txt3)}
-.toast{position:fixed;left:50%;bottom:64px;transform:translateX(-50%);background:#1f2328;color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;z-index:99;opacity:0;pointer-events:none;transition:opacity .18s}
+.toast{position:fixed;left:50%;bottom:70px;transform:translateX(-50%);background:var(--txt);color:#fff;
+  padding:9px 18px;border-radius:var(--radius);font-size:13px;z-index:99;opacity:0;pointer-events:none;
+  transition:opacity .18s;box-shadow:var(--shadow2)}
 .toast.show{opacity:1}
 .syncbar{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--txt2)}
 .syncbar .dot{width:8px;height:8px;border-radius:50%;background:#b8bfc7;display:inline-block}
 .syncbar .dot.ok{background:var(--keep)}
 .syncbar .dot.warn{background:var(--warn)}
-.storebadge{font-size:11px;color:var(--txt3);cursor:pointer;padding:4px 8px;border:1px solid var(--line);border-radius:7px;white-space:nowrap;background:#fff}
-.storebadge:hover{border-color:var(--accent);color:var(--accent)}
-.storebadge.warn{background:#fff7e6;border-color:#ffd591;color:#a15c00}
+.storebadge{font-size:11px;color:var(--txt2);cursor:pointer;padding:5px 10px;border:var(--hair);
+  border-radius:var(--radius-sm);white-space:nowrap;background:var(--panel);font-weight:600;
+  transition:border-color .14s,color .14s,background .14s}
+.storebadge:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-tint)}
+.storebadge.warn{background:var(--warn-soft);border-color:var(--warn-line);color:var(--warn)}
+
+/* ---------------- 弹窗 ---------------- */
 .hmodal{position:fixed;left:50%;top:50%;transform:translate(-50%,-48%) scale(.98);z-index:90;
-  width:min(560px,92vw);max-height:82vh;background:var(--panel);border:1px solid var(--line);
-  border-radius:12px;box-shadow:0 18px 60px rgba(20,24,30,.22);display:flex;flex-direction:column;
+  width:min(560px,92vw);max-height:82vh;background:var(--panel);border:var(--hair);
+  border-radius:var(--radius);box-shadow:var(--shadow2);display:flex;flex-direction:column;
   opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}
 .hmodal.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
-.hhead{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--line)}
-.hhead b{font-size:14px}
-.hbody{overflow-y:auto;padding:14px 18px 20px;font-size:13px;line-height:1.7;color:var(--txt2)}
-.hbody h5{margin:16px 0 7px;font-size:11px;color:var(--txt3);letter-spacing:1px}
+.hhead{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:var(--hair)}
+.hhead b{font-family:var(--serif);font-size:15px}
+.hbody{overflow-y:auto;padding:16px 20px 22px;font-size:13px;line-height:1.75;color:var(--txt2)}
+.hbody h5{margin:18px 0 8px;font-size:9.5px;color:var(--txt3);letter-spacing:.16em;font-weight:700;
+  text-transform:uppercase}
 .hbody h5:first-child{margin-top:0}
-.hbody code{background:#f4f5f7;padding:2px 6px;border-radius:5px;font-size:12px;word-break:break-all}
-.hbody .kv{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 14px;margin:6px 0}
-.hbody .kv span b{color:var(--accent);font-size:14px}
-.hbody .note{background:#fff7e6;border:1px solid #ffe0a3;border-radius:8px;padding:10px 12px;color:#8a5a00;font-size:12px}
-.hbody textarea{width:100%;min-height:76px;padding:8px;border:1px solid var(--line);border-radius:7px;font:12px/1.5 monospace;resize:vertical;background:#fbfcfd}
-.hbody .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.hbody code{background:var(--paper2);border:var(--hair);padding:2px 6px;border-radius:4px;font-size:12px;
+  word-break:break-all;font-family:var(--mono)}
+.hbody .kv{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 16px;margin:8px 0}
+.hbody .kv span b{color:var(--accent);font-size:15px;font-family:var(--serif)}
+.hbody .note{background:var(--warn-soft);border:var(--hair);border-left:3px solid var(--warn);
+  border-radius:var(--radius-sm);padding:11px 13px;color:var(--warn);font-size:12px}
+.hbody textarea{width:100%;min-height:76px;padding:9px;border:var(--hair);border-radius:var(--radius-sm);
+  font:12px/1.6 var(--mono);resize:vertical;background:var(--paper2)}
+.hbody .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+
 /* 开屏引导：遮罩虚化主页面，小窗保持清晰 */
-.scrim.welcome{background:rgba(20,24,30,.34);backdrop-filter:blur(6px) saturate(.9);-webkit-backdrop-filter:blur(6px) saturate(.9);z-index:95}
+.scrim.welcome{background:rgba(26,29,41,.36);backdrop-filter:blur(6px) saturate(.92);
+  -webkit-backdrop-filter:blur(6px) saturate(.92);z-index:95}
 .wmodal{position:fixed;left:50%;top:50%;transform:translate(-50%,-48%) scale(.98);z-index:96;
-  width:min(430px,92vw);background:var(--panel);border:1px solid var(--line);border-radius:14px;
-  box-shadow:0 20px 60px rgba(20,24,30,.28);opacity:0;pointer-events:none;
+  width:min(440px,92vw);background:var(--panel);border:var(--hair);border-radius:var(--radius);
+  box-shadow:var(--shadow2);opacity:0;pointer-events:none;
   transition:opacity .18s,transform .18s}
 .wmodal.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
-.whead{padding:14px 18px;border-bottom:1px solid var(--line);font-size:15px}
-.wbody{padding:16px 18px 18px}
-.wlead{margin:0 0 16px;font-size:14px;line-height:1.9;color:var(--txt)}
+.whead{padding:16px 20px;border-bottom:var(--hair);font-family:var(--serif);font-size:16px;font-weight:700;
+  display:flex;align-items:center;gap:10px}
+.wbody{padding:18px 20px 20px}
+.wlead{margin:0 0 18px;font-size:13.5px;line-height:1.95;color:var(--txt2)}
 .wbtns{display:flex;gap:10px;flex-wrap:wrap}
-.wbtns .btn{padding:9px 14px}
-.wpriv{margin-top:14px;font-size:11px;color:var(--txt3);line-height:1.7}
-.wfoot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:14px}
+.wbtns .btn{padding:9px 16px}
+.wpriv{margin-top:16px;font-size:11px;color:var(--txt3);line-height:1.75}
+.wfoot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:15px}
 .wskip{border:0;background:none;color:var(--txt3);font-size:11px;text-decoration:underline;cursor:pointer}
-.wiframe{margin-top:12px;padding:10px;background:var(--warn-soft);border:1px solid #f0d9a8;
-  border-radius:8px;font-size:12px;line-height:1.7;color:var(--warn)}
+.wiframe{margin-top:12px;padding:11px 13px;background:var(--warn-soft);border:1px solid var(--warn-line);
+  border-radius:var(--radius-sm);font-size:12px;line-height:1.75;color:var(--warn)}
 </style>
 </head>
 <body>
 
 <header>
-  <div class="logo">本地书库管理 <small id="hdSub"></small></div>
+  <div class="logo"><span class="logo-mark">书</span><span>本地书库管理</span> <small id="hdSub"></small></div>
   <div class="search"><input id="q" placeholder="搜索书名 / 作者…" autocomplete="off"></div>
   <div class="ctl"><label>排序</label>
     <select id="sort">
@@ -240,16 +357,14 @@ footer .n b{color:var(--accent);font-size:15px}
   <div class="spacer"></div>
   <div class="syncbar"><span class="dot" id="syncDot"></span><span id="syncText">未同步</span></div>
   <span class="storebadge" id="storeBadge" title="点击查看数据体检">数据体检</span>
-  <button class="btn" id="btnSync">同步书库</button>
+  <button class="btn" id="btnSync" title="重新扫描你选的书库文件夹（只读，不改动任何文件）">同步本地书库</button>
   <button class="btn" id="btnCopy">复制选中书名</button>
-  <button class="btn" id="btnNote">导出清单</button>
-  <button class="btn" id="btnState">备份</button>
-  <button class="btn" id="btnImport">恢复</button>
-  <button class="btn" id="btnImportLib">导入书库</button>
+  <button class="btn" id="btnNote" title="导出一个纯文本清单（.txt）：按分类分组，每本只留「书名 · 作者」「豆瓣分 / 我的评分 / 我的评价」。适合丢给 AI 做阅读分析与推荐，不能拿来恢复书库">导出我的阅读清单</button>
+  <button class="btn" id="btnState" title="把书单 + 豆瓣评分 + 我的评分 + 阅读进度 + 笔记 打成一个文件，换电脑后选「恢复」原样还原">完整备份</button>
+  <button class="btn" id="btnImport" title="选一个 JSON，自动识别：完整备份→书单和评分笔记一起还原；只有书单→只换书单；只有评分笔记→合并回来">恢复</button>
   <button class="btn" id="btnGuide" title="查看使用说明">?</button>
   <button class="btn" id="btnHealth">数据体检</button>
   <input type="file" id="impFile" accept=".json,application/json" style="display:none">
-  <input type="file" id="impLibFile" accept=".json,application/json" style="display:none">
 </header>
 
 <div class="wrap">
@@ -263,7 +378,6 @@ footer .n b{color:var(--accent);font-size:15px}
     <h4>我的标记</h4>
     <label class="chk"><input type="checkbox" id="fMyRate"> 有我的评分</label>
     <label class="chk"><input type="checkbox" id="fReading"> 在读（0 &lt; 进度 &lt; 100%）</label>
-    <label class="chk"><input type="checkbox" id="fFinished"> 已读完</label>
     <label class="chk"><input type="checkbox" id="fNotes"> 有笔记</label>
     <h4>筛选</h4>
     <label class="chk"><input type="checkbox" id="fDup"> 仅看重名</label>
@@ -276,7 +390,7 @@ footer .n b{color:var(--accent);font-size:15px}
     <h4>本地同步</h4>
     <label class="chk"><input type="checkbox" id="fHide" checked> 隐藏已删除</label>
     <label class="chk"><input type="checkbox" id="fPartial"> 仅部分缺失</label>
-    <div class="mini" id="syncInfo">点右上「同步书库」，只读扫描你选的文件夹，自动隐藏本地已删的书。</div>
+    <div class="mini" id="syncInfo">点右上「同步本地书库」，只读扫描你选的文件夹，自动隐藏本地已删的书。</div>
     <div class="amb" id="ambBox" style="display:none"></div>
     <h4>最低评分</h4>
     <select id="fRate" style="width:100%">
@@ -336,7 +450,7 @@ footer .n b{color:var(--accent);font-size:15px}
     <section>
       <h5>笔记</h5>
       <div class="drow" style="margin-bottom:8px">
-        <input id="dLink" type="url" placeholder="幕布笔记链接 https://mubu.com/doc/...">
+        <input id="dLink" type="url" placeholder="笔记链接 https://…（Notion / 任意网页均可）">
         <button class="mini-btn" id="dOpen">打开</button>
         <button class="mini-btn" id="dApp" style="display:none">客户端</button>
       </div>
@@ -359,18 +473,18 @@ footer .n b{color:var(--accent);font-size:15px}
 
 <div class="scrim welcome" id="wScrim"></div>
 <div class="wmodal" id="wModal" role="dialog" aria-modal="true" aria-labelledby="wTitle">
-  <div class="whead"><b id="wTitle">本地书库管理 · 本地电子书清单</b></div>
+  <div class="whead"><span class="logo-mark">书</span><b id="wTitle">本地书库管理 · 本地电子书清单</b></div>
   <div class="wbody">
     <div class="wlead">
       <div>选一个文件夹，生成本地电子书清单。</div>
-      <div>查重 · 检索 · 分类 · 评分 · 笔记。</div>
+      <div>查重 · 分类 · 评分 · 笔记；书名可复制、清单可导出，直接喂给 AI。</div>
       <div>只读、不上传、刷新不丢。</div>
     </div>
     <div class="wbtns">
       <button class="btn" id="wDemo">先看看示例</button>
       <button class="btn primary" id="wPick">选择文件夹</button>
     </div>
-    <div class="wpriv">只读本地，文件不上传；书单、评分与笔记只存你的浏览器。换地址或换浏览器请用「备份 / 恢复」搬运。</div>
+    <div class="wpriv">只读本地，文件不上传；书单、评分与笔记只存你的浏览器。换地址或换浏览器请用「完整备份 / 恢复」搬运。</div>
     <div class="wiframe" id="wIframe" style="display:none"></div>
     <div class="wfoot">
       <button class="wskip" id="wSkip">不再显示</button>
@@ -382,6 +496,7 @@ footer .n b{color:var(--accent);font-size:15px}
 <div class="toast" id="toast"></div>
 
 <script id="LIBRARY_DATA" type="application/json">{"kind":"ebooklib_library_data","schema":2,"generated_at":"2026-11-11T16:57:18","stats":{"entries":30,"file_books":28,"scansets":2,"rated":30,"famous":26,"pending":0,"suspect":0,"no_douban":0},"meta":{"root_name":"示例书库","book_ext":[".mobi",".epub",".pdf",".azw3",".azw",".kfx",".txt",".doc",".docx"],"counts":{"books":28,"scansets":2},"source":"demo"},"books":[{"sk":"path:示例书库/文学/红楼梦.epub","id":"demo-0001","kind":"file","rel":"示例书库/文学/红楼梦.epub","name":"红楼梦.epub","title":"红楼梦","author":"曹雪芹","author_from":"demo","ext":"epub","size":430080,"total_size":430080,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/文学/红楼梦.epub","size":430080,"ext":"epub","mtime":1767225600}],"category":"文学·小说","category_src":"demo","author_famous":true,"rating":9.7,"votes":471290,"douban":{"id":"1007305","url":"https://book.douban.com/subject/1007305/","title":"红楼梦","author":"曹雪芹","rating":9.7,"votes":471290,"year":"1982","publisher":"人民文学出版社","pages":1606,"intro":"《红楼梦》是一部百科全书式的长篇小说。以宝黛爱情悲剧为主线，以四大家族的荣辱兴衰为背景，描绘出18世纪中国封建社会的方方面面，以及封建专制下新兴资本主义民主思想的萌动。结构宏大、情节委婉、细节精致，人物形象栩栩如生，声口毕现，堪称中国古代小说中的经 典。 由红楼梦研究所校注、人民文学出版社出版的《红楼梦》以庚辰（1760）本《脂砚斋重评石头记》为底本，以甲戌（1754）本、已卯（1759）本、蒙古王府本、戚蓼生序本、舒元炜序本、郑振铎藏本、红楼梦稿本、列宁格勒藏本（俄藏本）、程甲本、程乙本等众多版本为参校本，是一个博采众长、非常适合大众阅读的本子；同时，对底本的重要修改，皆出校记，读者可因以了解《红楼梦》的不同版本状况。 红学所的校注本已印行二十五年，其间1994年曾做过一次修订，又十几年过去，2008年推出修订第三版，体现了新的校注成果和科研成果。...(展开全部)","cover":"https://img3.doubanio.com/view/subject/l/public/s1070959.jpg","confidence":1.0,"matched_query":"红楼梦"},"douban_status":"ok","oneline":"《红楼梦》是一部百科全书式的长篇小说。以宝黛爱情悲剧为主线，以四大家族的荣辱兴衰为背景，描绘出18世纪中国封建社会的方方面面，以及封建专制下新兴资本主义民主思想的萌动。结构宏大、情节委婉、细节精致，人物形象栩栩如生，声口毕现，堪称中国古代小","intro_short":"是一部百科全书式的长篇小说。","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/文学/百年孤独.epub","id":"demo-0002","kind":"file","rel":"示例书库/文学/百年孤独.epub","name":"百年孤独.epub","title":"百年孤独","author":"加西亚·马尔克斯","author_from":"demo","ext":"epub","size":389120,"total_size":389120,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/文学/百年孤独.epub","size":389120,"ext":"epub","mtime":1767225600}],"category":"文学·小说","category_src":"demo","author_famous":true,"rating":9.3,"votes":482211,"douban":{"id":"6082808","url":"https://book.douban.com/subject/6082808/","title":"百年孤独","author":"加西亚·马尔克斯","rating":9.3,"votes":482211,"year":"2011","publisher":"南海出版公司","pages":360,"intro":"《百年孤独》是魔幻现实主义文学的代表作，描写了布恩迪亚家族七代人的传奇故事，以及加勒比海沿岸小镇马孔多的百年兴衰，反映了拉丁美洲一个世纪以来风云变幻的历史。作品融入神话传说、民间故事、宗教典故等神秘因素，巧妙地糅合了现实与虚幻，展现出一个瑰丽的想象世界，成为20世纪最重要的经典文学巨著之一。1982年加西亚•马尔克斯获得诺贝尔文学奖，奠定世界级文学大师的地位，很大程度上乃是凭借《百年孤独》的巨大影响。","cover":"https://img3.doubanio.com/view/subject/l/public/s27237850.jpg","confidence":1.0,"matched_query":"百年孤独"},"douban_status":"ok","oneline":"《百年孤独》是魔幻现实主义文学的代表作，描写了布恩迪亚家族七代人的传奇故事，以及加勒比海沿岸小镇马孔多的百年兴衰，反映了拉丁美洲一个世纪以来风云变幻的历史。作品融入神话传说、民间故事、宗教典故等神秘因素，巧妙地糅合了现实与虚幻，展现出一个瑰","intro_short":"是魔幻现实主义文学的代表作，描写了布恩迪亚家族七代人的传奇故事，以及加勒比海沿岸小镇马孔多的百年兴衰，反映了拉丁美洲一个世纪以来风云变幻的历史。","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/文学/一九八四.mobi","id":"demo-0003","kind":"file","rel":"示例书库/文学/一九八四.mobi","name":"一九八四.mobi","title":"一九八四","author":"乔治·奥威尔","author_from":"demo","ext":"mobi","size":524288,"total_size":524288,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/文学/一九八四.mobi","size":524288,"ext":"mobi","mtime":1767225600}],"category":"文学·小说","category_src":"demo","author_famous":true,"rating":9.5,"votes":53201,"douban":{"id":"3815131","url":"https://book.douban.com/subject/3815131/","title":"一九八四","author":"乔治·奥威尔","rating":9.5,"votes":53201,"year":"2009","publisher":"上海译文出版社","pages":358,"intro":"《一九八四》（出版于1949年）是奥威尔的传世之作，堪称世界文坛最著名的反乌托邦、反极权的政治讽喻小说。他在小说中创造的“老大哥”、“双重思想”、“新话”等词汇都已收入权威的英语词典，甚至由他的姓衍生出“奥威尔式”（Orwellian）、“奥威尔主义”（Orwellism）这样 的通用词汇，不断出现在报道国际新闻的记者笔下，足见其作品在英语国家影响之深远。 “多一个人看奥威尔，就多了一份自由的保障，”有论家如是说。","cover":"https://img2.doubanio.com/view/subject/l/public/s3864641.jpg","confidence":1.0,"matched_query":"一九八四"},"douban_status":"ok","oneline":"《一九八四》（出版于1949年）是奥威尔的传世之作，堪称世界文坛最著名的反乌托邦、反极权的政治讽喻小说。他在小说中创造的“老大哥”、“双重思想”、“新话”等词汇都已收入权威的英语词典，甚至由他的姓衍生出“奥威尔式”（Orwellian）、“","intro_short":"（出版于1949年）是奥威尔的传世之作，堪称世界文坛最著名的反乌托邦、反极权的政治讽喻小说。","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/文学/活着.epub","id":"demo-0004","kind":"file","rel":"示例书库/文学/活着.epub","name":"活着.epub","title":"活着","author":"余华","author_from":"demo","ext":"epub","size":98304,"total_size":98304,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/文学/活着.epub","size":98304,"ext":"epub","mtime":1767225600}],"category":"文学·小说","category_src":"demo","author_famous":true,"rating":9.4,"votes":929553,"douban":{"id":"4913064","url":"https://book.douban.com/subject/4913064/","title":"活着","author":"余华","rating":9.4,"votes":929553,"year":"2012","publisher":"作家出版社","pages":191,"intro":"《活着(新版)》讲述了农村人福贵悲惨的人生遭遇。福贵本是个阔少爷，可他嗜赌如命，终于赌光了家业，一贫如洗。他的父亲被他活活气死，母亲则在穷困中患了重病，福贵前去求药，却在途中被国民党抓去当壮丁。经过几番波折回到家里，才知道母亲早已去世，妻子家珍含辛茹苦地养大两个儿女。此后更加悲惨的命运一次又一次降临到福贵身上，他的妻子、儿女和孙子相继死去，最后只剩福贵和一头老牛相依为命，但老人依旧活着，仿佛比往日更加洒脱与坚强。 《活着(新版)》荣获意大利格林扎纳•卡佛文学奖最高奖项（1998年）、台湾《中国时报》10本好书奖（1994年）、香港“博益”15本好书奖（1994年）、第三届世界华文“冰心文学奖”（2002年），入选香港《亚洲周刊》评选的“20世纪中文小说百年百强”、中国百位批评家和文学编辑评选的“20世纪90年代最有影响的10部作品”。","cover":"https://img9.doubanio.com/view/subject/l/public/s29869926.jpg","confidence":1.0,"matched_query":"活着"},"douban_status":"ok","oneline":"《活着(新版)》讲述了农村人福贵悲惨的人生遭遇。福贵本是个阔少爷，可他嗜赌如命，终于赌光了家业，一贫如洗。他的父亲被他活活气死，母亲则在穷困中患了重病，福贵前去求药，却在途中被国民党抓去当壮丁。经过几番波折回到家里，才知道母亲早已去世，妻子","intro_short":"讲述了农村人福贵悲惨的人生遭遇。","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/文学/围城.pdf","id":"demo-0005","kind":"file","rel":"示例书库/文学/围城.pdf","name":"围城.pdf","title":"围城","author":"钱锺书","author_from":"demo","ext":"pdf","size":2150400,"total_size":2150400,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/文学/围城.pdf","size":2150400,"ext":"pdf","mtime":1767225600}],"category":"文学·小说","category_src":"demo","author_famous":true,"rating":9.3,"votes":115695,"douban":{"id":"11524204","url":"https://book.douban.com/subject/11524204/","title":"围城","author":"钱锺书","rating":9.3,"votes":115695,"year":"1991","publisher":"人民文学出版社","pages":362,"intro":"《围城》是一幅栩栩如生的世井百态图，人生的酸甜苦辣千般滋味均在其中得到了淋漓尽致的体现。钱钟书先生将自己的语言天才并入极其渊博的知识，再添加上一些讽刺主义的幽默调料，以一书而定江山。《围城》显示给我们一个真正的聪明人是怎样看人生，又怎样用所有作家都必得使用的文字来表述自己的“观”和“感”的。","cover":"https://img3.doubanio.com/view/subject/l/public/s11276847.jpg","confidence":1.0,"matched_query":"围城"},"douban_status":"ok","oneline":"《围城》是一幅栩栩如生的世井百态图，人生的酸甜苦辣千般滋味均在其中得到了淋漓尽致的体现。钱钟书先生将自己的语言天才并入极其渊博的知识，再添加上一些讽刺主义的幽默调料，以一书而定江山。《围城》显示给我们一个真正的聪明人是怎样看人生，又怎样用所","intro_short":"是一幅栩栩如生的世井百态图，人生的酸甜苦辣千般滋味均在其中得到了淋漓尽致的体现。","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/文学/老人与海.txt","id":"demo-0006","kind":"file","rel":"示例书库/文学/老人与海.txt","name":"老人与海.txt","title":"老人与海","author":"海明威","author_from":"demo","ext":"txt","size":3276800,"total_size":3276800,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/文学/老人与海.txt","size":3276800,"ext":"txt","mtime":1767225600}],"category":"文学·小说","category_src":"demo","author_famous":true,"rating":9.0,"votes":9971,"douban":{"id":"30338134","url":"https://book.douban.com/subject/30338134/","title":"老人与海","author":"欧内斯特·海明威","rating":9.0,"votes":9971,"year":"2018","publisher":"中信出版社","pages":264,"intro":"“人可以被毁灭，但不能被打败。”一位老人孤身在海上捕鱼，八十四天一无所获，等终于钓到大鱼，用了两天两夜才将其刺死。返航途中突遭鲨鱼袭击，经过一天一夜的缠斗，大鱼仅存骨架。但老人并未失去希望和信心，休整之后，准备再次出海…… 编辑推荐 ◆ 海明威等了64年的中文译本终于来了！华语传奇作家鲁羊首次翻译外国经典，译稿出版前在各界名人中广泛流传，好评如潮，口碑爆棚。 ◆ 《老人与海》有声演读版音频，李蕾姐姐读经典演绎，用声音为你复活《老人与海》。 ◆ 附英文原版，校自海明威1952年亲自授权的美国Scribner原版定本！中英双语，超值典藏。 ◆ 国际当红女插画师SlavaShults，首次为中文版《老人与海》专门创作12副海报级手绘插图，带给你前所未有的阅读体验；随书附赠精1张精美明信片（一套10张随机送）。 ◆ “所有的原则自天而降：那就是你必须相信魔法...(展开全部)","cover":"https://img9.doubanio.com/view/subject/l/public/s29961556.jpg","confidence":1.0,"matched_query":"老人与海"},"douban_status":"ok","oneline":"“人可以被毁灭，但不能被打败。”一位老人孤身在海上捕鱼，八十四天一无所获，等终于钓到大鱼，用了两天两夜才将其刺死。返航途中突遭鲨鱼袭击，经过一天一夜的缠斗，大鱼仅存骨架。但老人并未失去希望和信心，休整之后，准备再次出海…… 编辑推荐 ◆ 海","intro_short":"“人可以被毁灭，但不能被打败。","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/文学/傲慢与偏见.epub","id":"demo-0007","kind":"file","rel":"示例书库/文学/傲慢与偏见.epub","name":"傲慢与偏见.epub","title":"傲慢与偏见","author":"简·奥斯汀","author_from":"demo","ext":"epub","size":481280,"total_size":481280,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/文学/傲慢与偏见.epub","size":481280,"ext":"epub","mtime":1767225600}],"category":"文学·小说","category_src":"demo","author_famous":true,"rating":9.0,"votes":46336,"douban":{"id":"4881639","url":"https://book.douban.com/subject/4881639/","title":"傲慢与偏见","author":"简·奥斯丁","rating":9.0,"votes":46336,"year":"2010","publisher":"译林出版社","pages":304,"intro":"本书描写傲慢的单身青年达西与偏见的二小姐伊丽莎白、富裕的单身贵族彬格莱与贤淑的大小姐吉英之间的感情纠葛，充分表达了作者本人的婚姻观，强调经济利益对恋爱和婚姻的影响。小说情节富有喜剧性，语言机智幽默，是奥斯丁小说中最受欢迎的一部，并被多次改编成电影和电视剧。","cover":"https://img3.doubanio.com/view/subject/l/public/s4571103.jpg","confidence":1.0,"matched_query":"傲慢与偏见"},"douban_status":"ok","oneline":"本书描写傲慢的单身青年达西与偏见的二小姐伊丽莎白、富裕的单身贵族彬格莱与贤淑的大小姐吉英之间的感情纠葛，充分表达了作者本人的婚姻观，强调经济利益对恋爱和婚姻的影响。小说情节富有喜剧性，语言机智幽默，是奥斯丁小说中最受欢迎的一部，并被多次改编","intro_short":"本书描写傲慢的单身青年达西与偏见的二小姐伊丽莎白、富裕的单身贵族彬格莱与贤淑的大小姐吉英之间的感情纠葛，充分表达了作者本人的婚姻观，强调经济利益对恋爱和婚姻…","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/文学/骆驼祥子.epub","id":"demo-0008","kind":"file","rel":"示例书库/文学/骆驼祥子.epub","name":"骆驼祥子.epub","title":"骆驼祥子","author":"老舍","author_from":"demo","ext":"epub","size":440320,"total_size":440320,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/文学/骆驼祥子.epub","size":440320,"ext":"epub","mtime":1767225600}],"category":"文学·小说","category_src":"demo","author_famous":true,"rating":8.6,"votes":230141,"douban":{"id":"1043815","url":"https://book.douban.com/subject/1043815/","title":"骆驼祥子","author":"老舍","rating":8.6,"votes":230141,"year":"1962","publisher":"人民文学出版社","pages":224,"intro":"《骆驼祥子》是老舍用同情的笔触描绘的一幕悲剧：二十年代的北京，一个勤劳、壮实的底层社会小人物怀着发家、奋斗的美好梦想，却最终为黑暗的暴风雨所吞噬。它揭示了当时“小人物”的奴隶心理和希望的最终破灭。随着祥子心爱的女人小福子的自杀，祥子熄灭了个人奋斗的最后一朵火花。这是旧中国老北京贫苦市民的典型命运。","cover":"https://img3.doubanio.com/view/subject/l/public/s1146040.jpg","confidence":1.0,"matched_query":"骆驼祥子"},"douban_status":"ok","oneline":"《骆驼祥子》是老舍用同情的笔触描绘的一幕悲剧：二十年代的北京，一个勤劳、壮实的底层社会小人物怀着发家、奋斗的美好梦想，却最终为黑暗的暴风雨所吞噬。它揭示了当时“小人物”的奴隶心理和希望的最终破灭。随着祥子心爱的女人小福子的自杀，祥子熄灭了个","intro_short":"是老舍用同情的笔触描绘的一幕悲剧：二十年代的北京，一个勤劳、壮实的底层社会小人物怀着发家、奋斗的美好梦想，却最终为黑暗的暴风雨所吞噬。","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/历史/万历十五年.epub","id":"demo-0009","kind":"file","rel":"示例书库/历史/万历十五年.epub","name":"万历十五年.epub","title":"万历十五年","author":"黄仁宇","author_from":"demo","ext":"epub","size":1048576,"total_size":1048576,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/历史/万历十五年.epub","size":1048576,"ext":"epub","mtime":1767225600}],"category":"历史·传记","category_src":"demo","author_famous":true,"rating":9.0,"votes":220823,"douban":{"id":"1041482","url":"https://book.douban.com/subject/1041482/","title":"万历十五年","author":"黄仁宇","rating":9.0,"votes":220823,"year":"1997","publisher":"生活·读书·新知三联书店","pages":320,"intro":"万历十五年，亦即公元1587年，在西欧历史上为西班牙舰队全部出动征英的前一年；而在中国，这平平淡淡的一年中，发生了若干为历史学家所易于忽视的事件。这些事件，表面看来虽似末端小节，但实质上却是以前发生大事的症结，也是将在以后掀起波澜的机缘。在历史学家黄仁宇的眼中，其间的关系因果，恰为历史的重点，而我们的大历史之旅，也自此开始…… 《万历十五年》是黄仁宇的成名之作，也是他的代表作之一。这本书融会了他数十年人生经历与治学体会，首次以“大历史观”分析明代社会之症结，观察现代中国之来路，给人启发良多。英文原本推出后，被美国多所大学采用为教科书，并两次获得美国书卷奖历史类好书的提名。","cover":"https://img9.doubanio.com/view/subject/l/public/s1800355.jpg","confidence":1.0,"matched_query":"万历十五年"},"douban_status":"ok","oneline":"万历十五年，亦即公元1587年，在西欧历史上为西班牙舰队全部出动征英的前一年；而在中国，这平平淡淡的一年中，发生了若干为历史学家所易于忽视的事件。这些事件，表面看来虽似末端小节，但实质上却是以前发生大事的症结，也是将在以后掀起波澜的机缘。在","intro_short":"万历十五年，亦即公元1587年，在西欧历史上为西班牙舰队全部出动征英的前一年；而在中国，这平平淡淡的一年中，发生了若干为历史学家所易于忽视的事件。","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/历史/明朝那些事儿.mobi","id":"demo-0010","kind":"file","rel":"示例书库/历史/明朝那些事儿.mobi","name":"明朝那些事儿.mobi","title":"明朝那些事儿","author":"当年明月","author_from":"demo","ext":"mobi","size":2097152,"total_size":2097152,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/历史/明朝那些事儿.mobi","size":2097152,"ext":"mobi","mtime":1767225600}],"category":"历史·传记","category_src":"demo","author_famous":true,"rating":9.2,"votes":37316,"douban":{"id":"7163250","url":"https://book.douban.com/subject/7163250/","title":"明朝那些事儿","author":"当年明月","rating":9.2,"votes":37316,"year":"2011","publisher":"浙江人民出版社","pages":2072,"intro":"《明朝那些事儿》这篇文主要讲述的是从1344年到1644年这三百年间关于明朝的一些事情，以史料为基础，以年代和具体人物为主线，并加入了小说的笔法，对明朝十七帝和其他王公权贵和小人物的命运进行全景展示，尤其对官场政治、战争、帝王心术着墨最多，并加入对当时政治经济制度、人伦道德的演义。","cover":"https://img3.doubanio.com/view/subject/l/public/s29399938.jpg","confidence":1.0,"matched_query":"明朝那些事儿"},"douban_status":"ok","oneline":"《明朝那些事儿》这篇文主要讲述的是从1344年到1644年这三百年间关于明朝的一些事情，以史料为基础，以年代和具体人物为主线，并加入了小说的笔法，对明朝十七帝和其他王公权贵和小人物的命运进行全景展示，尤其对官场政治、战争、帝王心术着墨最多，","intro_short":"这篇文主要讲述的是从1344年到1644年这三百年间关于明朝的一些事情，以史料为基础，以年代和具体人物为主线，并加入了小说的笔法，对明朝十七帝和其他王公权贵…","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/历史/人类简史.pdf","id":"demo-0011","kind":"file","rel":"示例书库/历史/人类简史.pdf","name":"人类简史.pdf","title":"人类简史","author":"尤瓦尔·赫拉利","author_from":"demo","ext":"pdf","size":1572864,"total_size":1572864,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/历史/人类简史.pdf","size":1572864,"ext":"pdf","mtime":1767225600}],"category":"历史·传记","category_src":"demo","author_famous":true,"rating":9.1,"votes":217648,"douban":{"id":"25985021","url":"https://book.douban.com/subject/25985021/","title":"人类简史","author":"尤瓦尔·赫拉利","rating":9.1,"votes":217648,"year":"2014","publisher":"中信出版社","pages":440,"intro":"十万年前，地球上至少有六种不同的人 但今日，世界舞台为什么只剩下了我们自己？ 从只能啃食虎狼吃剩的残骨的猿人，到跃居食物链顶端的智人， 从雪维洞穴壁上的原始人手印，到阿姆斯壮踩上月球的脚印， 从认知革命、农业革命，到科学革命、生物科技革命， 我们如何登上世界舞台成为万物之灵的？ 从公元前1776年的《汉摩拉比法典》，到1776年的美国独立宣言， 从帝国主义、资本主义，到自由主义、消费主义， 从兽欲，到物欲，从兽性、人性，到神性， 我们了解自己吗？我们过得更快乐吗？ 我们究竟希望自己得到什么、变成什么？ ------------------------------------------------------------------------------------------------ 【编辑推荐】 1、由书改变而成的人类简史课程风靡全球，成为...(展开全部)","cover":"https://img3.doubanio.com/view/subject/l/public/s27814883.jpg","confidence":1.0,"matched_query":"人类简史"},"douban_status":"ok","oneline":"十万年前，地球上至少有六种不同的人 但今日，世界舞台为什么只剩下了我们自己？ 从只能啃食虎狼吃剩的残骨的猿人，到跃居食物链顶端的智人， 从雪维洞穴壁上的原始人手印，到阿姆斯壮踩上月球的脚印， 从认知革命、农业革命，到科学革命、生物科技革命，","intro_short":"十万年前，地球上至少有六种不同的人 但今日，世界舞台为什么只剩下了我们自己？","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/历史/资治通鉴.epub","id":"demo-0012","kind":"file","rel":"示例书库/历史/资治通鉴.epub","name":"资治通鉴.epub","title":"资治通鉴","author":"司马光","author_from":"demo","ext":"epub","size":2621440,"total_size":2621440,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/历史/资治通鉴.epub","size":2621440,"ext":"epub","mtime":1767225600}],"category":"历史·传记","category_src":"demo","author_famous":true,"rating":9.7,"votes":3726,"douban":{"id":"6790302","url":"https://book.douban.com/subject/6790302/","title":"资治通鉴","author":"司马光","rating":9.7,"votes":3726,"year":"2011","publisher":"中华书局","pages":9942,"intro":"《资治通鉴》是中国古代著名的编年体史书，记载了战国至五代期间1300多年的历史，向为史学界所推崇，在收集史料、考订事实、编排年月及文字剪裁润色等方面都代表了古代编年体史书的最高成就，是古代历史研究的基本典籍。点校本以清朝胡克家翻刻的元刊胡三省注本为底本，是史学界通行的整理定本。","cover":"https://img9.doubanio.com/view/subject/l/public/s34615524.jpg","confidence":1.0,"matched_query":"资治通鉴"},"douban_status":"ok","oneline":"《资治通鉴》是中国古代著名的编年体史书，记载了战国至五代期间1300多年的历史，向为史学界所推崇，在收集史料、考订事实、编排年月及文字剪裁润色等方面都代表了古代编年体史书的最高成就，是古代历史研究的基本典籍。点校本以清朝胡克家翻刻的元刊胡三","intro_short":"是中国古代著名的编年体史书，记载了战国至五代期间1300多年的历史，向为史学界所推崇，在收集史料、考订事实、编排年月及文字剪裁润色等方面都代表了古代编年体史…","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/科技/时间简史.epub","id":"demo-0013","kind":"file","rel":"示例书库/科技/时间简史.epub","name":"时间简史.epub","title":"时间简史","author":"史蒂芬·霍金","author_from":"demo","ext":"epub","size":430080,"total_size":430080,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/科技/时间简史.epub","size":430080,"ext":"epub","mtime":1767225600}],"category":"科学·技术·自然","category_src":"demo","author_famous":false,"rating":9.6,"votes":98,"douban":{"id":"37307653","url":"https://book.douban.com/subject/37307653/","title":"时间简史","author":"史蒂芬·霍金","rating":9.6,"votes":98,"year":"2025","publisher":"湖南科学技术出版社","pages":302,"intro":"时间简史（插图版）2025全新改版 ※ 10页新内容首次收录——包括霍金2016年撰写的“新版前言”及“新发现”一章，梳理近20年来的宇宙学新发现 ※ 12张全新高清照片——直观呈现科技进展 ※ 30个注释——术语解释、背景补充、前沿进展、拓展阅读，降低阅读门槛 ※ 全新校译，革新版式——阅读更流畅 随书附赠 ※ 1份宇宙认知年表——可视化人类2500年艰难而浪漫的宇宙探索之旅 ※ 1本导读手册——丘成桐、王贻芳、张双南等18位大咖领读，为什么《时间简史》值得一读再读 —— 问世37年 被翻译成40余种文字 《纽约时报》畅销书榜霸榜147周 《星期日泰晤士报》畅销书榜霸榜264周 《人民日报》重磅推荐—— “那个写下《时间简史》的人被时间带走了。但时间带不走他的精神，带不走他的学术。” —— 《时间简史》这本书，不光有青年人说看不懂，连很有名的诺贝尔...(展开全部)","cover":"https://img9.doubanio.com/view/subject/l/public/s35123146.jpg","confidence":1.0,"matched_query":"时间简史"},"douban_status":"ok","oneline":"时间简史（插图版）2025全新改版 ※ 10页新内容首次收录——包括霍金2016年撰写的“新版前言”及“新发现”一章，梳理近20年来的宇宙学新发现 ※ 12张全新高清照片——直观呈现科技进展 ※ 30个注释——术语解释、背景补充、前沿进展、","intro_short":"时间简史（插图版）2025全新改版 ※ 10页新内容首次收录——包括霍金2016年撰写的“新版前言”及“新发现”一章，梳理近20年来的宇宙学新发现 ※ 12…","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/科技/自私的基因.pdf","id":"demo-0014","kind":"file","rel":"示例书库/科技/自私的基因.pdf","name":"自私的基因.pdf","title":"自私的基因","author":"理查德·道金斯","author_from":"demo","ext":"pdf","size":389120,"total_size":389120,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/科技/自私的基因.pdf","size":389120,"ext":"pdf","mtime":1767225600}],"category":"科学·技术·自然","category_src":"demo","author_famous":true,"rating":8.4,"votes":19308,"douban":{"id":"11445548","url":"https://book.douban.com/subject/11445548/","title":"自私的基因","author":"理查德·道金斯","rating":8.4,"votes":19308,"year":"2012","publisher":"中信出版社","pages":371,"intro":"《自私的基因》是20世纪最经典的著作，这版三十周年纪念版，在前版本基础上有两章增补和修订。我们从哪里来，又将到哪里去。生命有何意义，我们该如何认知自己？《自私的基因》充满想象力。任何生物，包括我们自己，都只是求生的机器。这本书是实实在在的认知科学，复制、变异和淘汰简单的三种机制可以演变出所有大千世界生命现象里的林林总总。 道金斯在《自私的基因》中的突破性贡献在于，把根据自然选择的社会学说的这一重要部分，用简明通俗的形式，妙趣横生的语言介绍给大家，这是第一次。他惊世骇俗地在《自私的基因》中提出：我们生来是自私的。人类窥见了社会关系中基本的对称性和逻辑性，在我们有了更充分的理解之后，我们的政治见解当会重新获得活力，并对心理学的科学研究提供理论上的支柱。在这一过程中，我们也必将对我们受苦受难的许多根源有一个更深刻的理解。","cover":"https://img9.doubanio.com/view/subject/l/public/s11214645.jpg","confidence":1.0,"matched_query":"自私的基因"},"douban_status":"ok","oneline":"《自私的基因》是20世纪最经典的著作，这版三十周年纪念版，在前版本基础上有两章增补和修订。我们从哪里来，又将到哪里去。生命有何意义，我们该如何认知自己？《自私的基因》充满想象力。任何生物，包括我们自己，都只是求生的机器。这本书是实实在在的认","intro_short":"是20世纪最经典的著作，这版三十周年纪念版，在前版本基础上有两章增补和修订。","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/科技/未来简史.epub","id":"demo-0015","kind":"file","rel":"示例书库/科技/未来简史.epub","name":"未来简史.epub","title":"未来简史","author":"尤瓦尔·赫拉利","author_from":"demo","ext":"epub","size":524288,"total_size":524288,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/科技/未来简史.epub","size":524288,"ext":"epub","mtime":1767225600}],"category":"科学·技术·自然","category_src":"demo","author_famous":true,"rating":8.7,"votes":12175,"douban":{"id":"26945094","url":"https://book.douban.com/subject/26945094/","title":"未来简史","author":"尤瓦尔·赫拉利","rating":8.7,"votes":12175,"year":"2016","publisher":"中信出版社","pages":416,"intro":"《未来简史:从智人到智神》进入21世纪后，曾经长期威胁人类生存、发展的瘟疫、饥荒和战争已经被攻克，智人面临着新的待办议题：永生不老、幸福快乐和成为具有“神性”的人类。在解决这些新问题的过程中，科学技术的发展将颠覆我们很多当下认为无需佐证的“常识”，比如人文主义所推崇的自由意志将面临严峻挑战，机器将会代替人类做出更明智的选择。 更重要的，当以大数据、人工智能为代表的科学技术发展的日益成熟，人类将面临着从进化到智人以来最大的一次改变，绝大部分人将沦为“无价值的群体”，只有少部分人能进化成特质发生改变的“神人”。 未来，人类将面临着三大问题：生物本身就是算法，生命是不断处理数据的过程；意识与智能的分离；拥有大数据积累的外部环境将比我们自己更了解自己。如何看待这三大问题，以及如何采取应对措施，将直接影响着人类未来的发展。","cover":"https://img3.doubanio.com/view/subject/l/public/s29317658.jpg","confidence":1.0,"matched_query":"未来简史"},"douban_status":"ok","oneline":"《未来简史:从智人到智神》进入21世纪后，曾经长期威胁人类生存、发展的瘟疫、饥荒和战争已经被攻克，智人面临着新的待办议题：永生不老、幸福快乐和成为具有“神性”的人类。在解决这些新问题的过程中，科学技术的发展将颠覆我们很多当下认为无需佐证的“","intro_short":"进入21世纪后，曾经长期威胁人类生存、发展的瘟疫、饥荒和战争已经被攻克，智人面临着新的待办议题：永生不老、幸福快乐和成为具有“神性”的人类。","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/科技/上帝掷骰子吗.mobi","id":"demo-0016","kind":"file","rel":"示例书库/科技/上帝掷骰子吗.mobi","name":"上帝掷骰子吗.mobi","title":"上帝掷骰子吗","author":"曹天元","author_from":"demo","ext":"mobi","size":98304,"total_size":98304,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/科技/上帝掷骰子吗.mobi","size":98304,"ext":"mobi","mtime":1767225600}],"category":"科学·技术·自然","category_src":"demo","author_famous":true,"rating":9.0,"votes":11684,"douban":{"id":"33477229","url":"https://book.douban.com/subject/33477229/","title":"上帝掷骰子吗？","author":"曹天元","rating":9.0,"votes":11684,"year":"2019","publisher":"北京联合出版公司","pages":496,"intro":"本书回顾量子论从无到有发展的风云录，从18世纪开始，直到21世纪，一批科学巨人开始颠覆传统物理学大厦，为了宇宙的终极理论而战，大大改变了人类发展的历史。 再现量子物理一路的荆棘与荣光，展现科学激动人心的魅力，这部量子物理史，足以唤起你对世界的全部好奇！ 【编辑推荐】 *国内最畅销的科普神作，创科普类图书中强大口碑。 刘慈欣盛赞：”教科书要是能这么有趣就好了！”百万读者惊呼：原来物理这么燃！ *扎克伯格关注的科技前沿，全球下一轮新科技革命的引爆点。 *权威奖项认证，原创科普扛鼎之作。 荣获“科学时报读书杯ZUI佳科普创作奖”、“第三届吴大猷科普奖”、“国家图书馆文津图书奖”、“40年中国ZUI具影响力的40本科学科普书”多项大奖。 *打破量子物理的高冷面具，关于量子物理，没有人写得比他更通俗、更有趣。 *升级版全面焕新： ◎内文重新修订，增加新近科学进...(展开全部)","cover":"https://img3.doubanio.com/view/subject/l/public/s32344288.jpg","confidence":1.0,"matched_query":"上帝掷骰子吗"},"douban_status":"ok","oneline":"本书回顾量子论从无到有发展的风云录，从18世纪开始，直到21世纪，一批科学巨人开始颠覆传统物理学大厦，为了宇宙的终极理论而战，大大改变了人类发展的历史。 再现量子物理一路的荆棘与荣光，展现科学激动人心的魅力，这部量子物理史，足以唤起你对世界","intro_short":"本书回顾量子论从无到有发展的风云录，从18世纪开始，直到21世纪，一批科学巨人开始颠覆传统物理学大厦，为了宇宙的终极理论而战，大大改变了人类发展的历史。","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/经管/穷查理宝典.epub","id":"demo-0017","kind":"file","rel":"示例书库/经管/穷查理宝典.epub","name":"穷查理宝典.epub","title":"穷查理宝典","author":"查理·芒格","author_from":"demo","ext":"epub","size":2150400,"total_size":2150400,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/经管/穷查理宝典.epub","size":2150400,"ext":"epub","mtime":1767225600}],"category":"商业·经济·管理","category_src":"demo","author_famous":true,"rating":8.6,"votes":1230,"douban":{"id":"37003888","url":"https://book.douban.com/subject/37003888/","title":"穷查理宝典","author":"彼得·考夫曼","rating":8.6,"votes":1230,"year":"2024","publisher":"中信出版集团","pages":null,"intro":"本书是脱胎于《穷查理宝典：查理·芒格智慧箴言录》的口袋本。 书中的序言部分，收录了李录撰写的中文版序言、巴菲特论芒格的序言及芒格的驳辞、编者考夫曼撰写的导读；正文部分收录了查理·芒格的小传、晚辈对芒格的忆念、编者整理的芒格的生活学习和决策方法，以及篇幅最长也最重要的查理十一讲——这11篇演讲凝聚了芒格的智慧精华。 阅读芒格在很多方面都具有启迪意义。就商业与投资而言，芒格始终坚持一种本杰明·富兰克林式的商业文明，强调诚信、理性与道德，这是一种与投机绝对相对立的价值观与方法论。他不仅身体力行，通过贯彻这套思想获得了投资的巨大成功，还以此视角观察和评析美国金融界的丑闻与乱象，并揭示出价值投资之所以有效的强大根基。 芒格的智慧又远不止于投资，构成本书重头的查理十一讲，忠实呈现了芒格是如何用广博学习的方式思考和理解现实世界的。这也是他与巴菲特相比显著不同的特点...(展开全部)","cover":"https://img3.doubanio.com/view/subject/l/public/s34937403.jpg","confidence":1.0,"matched_query":"穷查理宝典"},"douban_status":"ok","oneline":"本书是脱胎于《穷查理宝典：查理·芒格智慧箴言录》的口袋本。 书中的序言部分，收录了李录撰写的中文版序言、巴菲特论芒格的序言及芒格的驳辞、编者考夫曼撰写的导读；正文部分收录了查理·芒格的小传、晚辈对芒格的忆念、编者整理的芒格的生活学习和决策方","intro_short":"本书是脱胎于《穷查理宝典：查理·芒格智慧箴言录》的口袋本。","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/经管/经济学原理.pdf","id":"demo-0018","kind":"file","rel":"示例书库/经管/经济学原理.pdf","name":"经济学原理.pdf","title":"经济学原理","author":"曼昆","author_from":"demo","ext":"pdf","size":3276800,"total_size":3276800,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/经管/经济学原理.pdf","size":3276800,"ext":"pdf","mtime":1767225600}],"category":"商业·经济·管理","category_src":"demo","author_famous":true,"rating":9.5,"votes":2783,"douban":{"id":"35005103","url":"https://book.douban.com/subject/35005103/","title":"经济学原理(第8版)","author":"格里高里·曼昆","rating":9.5,"votes":2783,"year":"2020","publisher":"北京大学出版社","pages":544,"intro":"曼昆的《经济学原理》是国内外市场上广受欢迎的经济学经典教材之一。与同类书相比，本书的特点在于，更多地强调经济学原理的应用和思维方式的培养，而不是经济学模型。书中包含了大量贴近生活的案例研究和政策讨论。第8版更新了全书中的数据、习题及案例，并新增了“专家看法”等专栏。此外，第8版还配套了英文版的MindTap在线学习平台，内容包括互动电子书、视频导读、视频讲解、学习指南、在线测试题、拓展阅读等丰富的学习资源。本书为曼昆《经济学原理（第8版）》的微观经济学分册，适合经济学专业本科生的宏观经济学课程以及对经济学感兴趣的普通读者使用。","cover":"https://img2.doubanio.com/view/subject/l/public/s33698881.jpg","confidence":1.0,"matched_query":"经济学原理"},"douban_status":"ok","oneline":"曼昆的《经济学原理》是国内外市场上广受欢迎的经济学经典教材之一。与同类书相比，本书的特点在于，更多地强调经济学原理的应用和思维方式的培养，而不是经济学模型。书中包含了大量贴近生活的案例研究和政策讨论。第8版更新了全书中的数据、习题及案例，并","intro_short":"曼昆的《经济学原理》是国内外市场上广受欢迎的经济学经典教材之一。","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/经管/小狗钱钱.epub","id":"demo-0019","kind":"file","rel":"示例书库/经管/小狗钱钱.epub","name":"小狗钱钱.epub","title":"小狗钱钱","author":"博多·舍费尔","author_from":"demo","ext":"epub","size":481280,"total_size":481280,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/经管/小狗钱钱.epub","size":481280,"ext":"epub","mtime":1767225600}],"category":"商业·经济·管理","category_src":"demo","author_famous":true,"rating":9.2,"votes":35505,"douban":{"id":"35295592","url":"https://book.douban.com/subject/35295592/","title":"小狗钱钱","author":"博多·舍费尔","rating":9.2,"votes":35505,"year":"2021","publisher":"中信出版集团","pages":240,"intro":"吉娅是一个普通的12岁女孩，一次偶然的机会，她救助了一只受伤的小狗，并给它取名叫“钱钱”。没想到，钱钱居然是一位深藏不露的理财高手，它改变了吉娅一家人的财富命运…… “欧洲理财大师”博多·舍费尔用生动的理财童话，教会你如何从小学会支配金钱，而不是受金钱的支配；如何像富人那样思考，正确地认识和使用金钱；如何进行理财投资，找到积累资产的方法，早日实现财务自由！","cover":"https://img3.doubanio.com/view/subject/l/public/s33789389.jpg","confidence":1.0,"matched_query":"小狗钱钱"},"douban_status":"ok","oneline":"吉娅是一个普通的12岁女孩，一次偶然的机会，她救助了一只受伤的小狗，并给它取名叫“钱钱”。没想到，钱钱居然是一位深藏不露的理财高手，它改变了吉娅一家人的财富命运…… “欧洲理财大师”博多·舍费尔用生动的理财童话，教会你如何从小学会支配金钱，","intro_short":"吉娅是一个普通的12岁女孩，一次偶然的机会，她救助了一只受伤的小狗，并给它取名叫“钱钱”。","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/社会/乌合之众.epub","id":"demo-0020","kind":"file","rel":"示例书库/社会/乌合之众.epub","name":"乌合之众.epub","title":"乌合之众","author":"古斯塔夫·勒庞","author_from":"demo","ext":"epub","size":440320,"total_size":440320,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/社会/乌合之众.epub","size":440320,"ext":"epub","mtime":1767225600}],"category":"社会·纪实·新闻","category_src":"demo","author_famous":true,"rating":8.1,"votes":131935,"douban":{"id":"1012611","url":"https://book.douban.com/subject/1012611/","title":"乌合之众","author":"古斯塔夫·勒庞","rating":8.1,"votes":131935,"year":"2005","publisher":"中央编译出版社","pages":183,"intro":"古斯塔夫・勒庞 Gustave Le Bon(1841-1931) 法国著名社会心理学家。他自1894年始，写下一系列社会心理学著作，以本书最为著名；在社会心理学领域已有的著作中，最有影响的，也是这本并不很厚的《乌合之众》。古斯塔夫・勒庞在他在书中极为精致地描述了集体心态，对人们理解集体行为的作用以及对社会心理学的思考发挥了巨大影响。《乌合之众--大众心理研究》在西方已印至第29版，其观点新颖，语言生动，是群体行为的研究者不可不读的佳作。","cover":"https://img3.doubanio.com/view/subject/l/public/s1988393.jpg","confidence":1.0,"matched_query":"乌合之众"},"douban_status":"ok","oneline":"古斯塔夫・勒庞 Gustave Le Bon(1841-1931) 法国著名社会心理学家。他自1894年始，写下一系列社会心理学著作，以本书最为著名；在社会心理学领域已有的著作中，最有影响的，也是这本并不很厚的《乌合之众》。古斯塔夫・勒庞在","intro_short":"古斯塔夫・勒庞 Gustave Le Bon(1841-1931) 法国著名社会心理学家。","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/社会/看见.mobi","id":"demo-0021","kind":"file","rel":"示例书库/社会/看见.mobi","name":"看见.mobi","title":"看见","author":"柴静","author_from":"demo","ext":"mobi","size":1048576,"total_size":1048576,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/社会/看见.mobi","size":1048576,"ext":"mobi","mtime":1767225600}],"category":"社会·纪实·新闻","category_src":"demo","author_famous":false,"rating":9.6,"votes":589,"douban":{"id":"30539780","url":"https://book.douban.com/subject/30539780/","title":"看见","author":"蒋寒","rating":9.6,"votes":589,"year":"2018","publisher":"江苏凤凰美术出版社","pages":250,"intro":null,"cover":"https://img3.doubanio.com/view/subject/l/public/s35167880.jpg","confidence":1.0,"matched_query":"看见"},"douban_status":"ok","oneline":"","intro_short":"","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/哲学/苏菲的世界.epub","id":"demo-0022","kind":"file","rel":"示例书库/哲学/苏菲的世界.epub","name":"苏菲的世界.epub","title":"苏菲的世界","author":"乔斯坦·贾德","author_from":"demo","ext":"epub","size":2097152,"total_size":2097152,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/哲学/苏菲的世界.epub","size":2097152,"ext":"epub","mtime":1767225600}],"category":"政治·哲学·军事","category_src":"demo","author_famous":true,"rating":9.0,"votes":15926,"douban":{"id":"27172839","url":"https://book.douban.com/subject/27172839/","title":"苏菲的世界","author":"乔斯坦·贾德","rating":9.0,"votes":15926,"year":"2017","publisher":"作家出版社","pages":528,"intro":"《苏菲的世界》 这是一本风靡世界的哲学启蒙书。 14岁的少女苏菲不断接到一些极不寻常的来信，世界像谜团一般在她眼底展开，她在一位神秘导师的指引下，苏菲开始思索，从苏格拉底、柏拉图到达尔文、弗洛伊德等哲学大师所思考的根本问题。苏菲运用少女天生的悟性与后天知识，企图解开这些谜团，然而，事实真相远比她所想的更怪异、更离奇。《苏菲的世界》，是智慧的世界，梦的世界。它将会唤醒每个人内心深处对生命的赞叹与对人生终极意义的关怀与好奇。","cover":"https://img9.doubanio.com/view/subject/l/public/s29580784.jpg","confidence":1.0,"matched_query":"苏菲的世界"},"douban_status":"ok","oneline":"《苏菲的世界》 这是一本风靡世界的哲学启蒙书。 14岁的少女苏菲不断接到一些极不寻常的来信，世界像谜团一般在她眼底展开，她在一位神秘导师的指引下，苏菲开始思索，从苏格拉底、柏拉图到达尔文、弗洛伊德等哲学大师所思考的根本问题。苏菲运用少女天生","intro_short":"这是一本风靡世界的哲学启蒙书。","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/哲学/沉思录.epub","id":"demo-0023","kind":"file","rel":"示例书库/哲学/沉思录.epub","name":"沉思录.epub","title":"沉思录","author":"马可·奥勒留","author_from":"demo","ext":"epub","size":1572864,"total_size":1572864,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/哲学/沉思录.epub","size":1572864,"ext":"epub","mtime":1767225600}],"category":"政治·哲学·军事","category_src":"demo","author_famous":true,"rating":8.1,"votes":24089,"douban":{"id":"2359003","url":"https://book.douban.com/subject/2359003/","title":"沉思录","author":"马可·奥勒留","rating":8.1,"votes":24089,"year":"2008","publisher":"中央编译出版社","pages":211,"intro":"《沉思录》是古罗马皇帝奥勒留写给自己的书，内容大部分是他在鞍马劳顿中写成的。作品来自奥勒留对身羁宫廷的自己和自己所处混乱世界的感受，追求一种冷静而达观的生活。这部著作是斯多葛学派的一个里程碑。","cover":"https://img2.doubanio.com/view/subject/l/public/s2825021.jpg","confidence":1.0,"matched_query":"沉思录"},"douban_status":"ok","oneline":"《沉思录》是古罗马皇帝奥勒留写给自己的书，内容大部分是他在鞍马劳顿中写成的。作品来自奥勒留对身羁宫廷的自己和自己所处混乱世界的感受，追求一种冷静而达观的生活。这部著作是斯多葛学派的一个里程碑。","intro_short":"是古罗马皇帝奥勒留写给自己的书，内容大部分是他在鞍马劳顿中写成的。","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/艺术/艺术的故事.pdf","id":"demo-0024","kind":"file","rel":"示例书库/艺术/艺术的故事.pdf","name":"艺术的故事.pdf","title":"艺术的故事","author":"贡布里希","author_from":"demo","ext":"pdf","size":2621440,"total_size":2621440,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/艺术/艺术的故事.pdf","size":2621440,"ext":"pdf","mtime":1767225600}],"category":"设计·艺术·摄影","category_src":"demo","author_famous":true,"rating":9.5,"votes":29947,"douban":{"id":"3162991","url":"https://book.douban.com/subject/3162991/","title":"艺术的故事","author":"贡布里希","rating":9.5,"votes":29947,"year":"2008","publisher":"广西美术出版社","pages":688,"intro":"《艺术的故事》概括地叙述了从最早的洞窟绘画到当今的实验艺术的发展历程，以阐明艺术史是“各种传统不断迂回、不断改变的历史，每一件作品在这历史中都既回顾过去又导向未来。 继1997年三联版《艺术的故事》后，英国费顿出版社授权广西美术出版社独家出版，也是国内唯一合法授权的版本。","cover":"https://img3.doubanio.com/view/subject/l/public/s3219163.jpg","confidence":1.0,"matched_query":"艺术的故事"},"douban_status":"ok","oneline":"《艺术的故事》概括地叙述了从最早的洞窟绘画到当今的实验艺术的发展历程，以阐明艺术史是“各种传统不断迂回、不断改变的历史，每一件作品在这历史中都既回顾过去又导向未来。 继1997年三联版《艺术的故事》后，英国费顿出版社授权广西美术出版社独家出","intro_short":"概括地叙述了从最早的洞窟绘画到当今的实验艺术的发展历程，以阐明艺术史是“各种传统不断迂回、不断改变的历史，每一件作品在这历史中都既回顾过去又导向未来。","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/艺术/设计中的设计.epub","id":"demo-0025","kind":"file","rel":"示例书库/艺术/设计中的设计.epub","name":"设计中的设计.epub","title":"设计中的设计","author":"原研哉","author_from":"demo","ext":"epub","size":430080,"total_size":430080,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/艺术/设计中的设计.epub","size":430080,"ext":"epub","mtime":1767225600}],"category":"设计·艺术·摄影","category_src":"demo","author_famous":true,"rating":8.6,"votes":34399,"douban":{"id":"1941558","url":"https://book.douban.com/subject/1941558/","title":"设计中的设计","author":"原研哉","rating":8.6,"votes":34399,"year":"2006","publisher":"山东人民出版社","pages":212,"intro":"设计到底是什么？作为一名从业二十余年并且具有世界影响的设计师，原研哉对自己提出了这样一个问题。为了给出自己的答案，他走了那么长的路，做了那么多的探索。“RE-DESIGN——二十一世纪的日常用品再设计”展真是一个有趣的展览，但又不仅仅是有趣，它分明是为我们揭示了“日常生活”所具有的无限可能性。若我们能以满怀新鲜的眼神去观照日常，“设计”的意义定会超越技术的层面，为我们的生活观和人生观注入力量。","cover":"https://img3.doubanio.com/view/subject/l/public/s2165932.jpg","confidence":1.0,"matched_query":"设计中的设计"},"douban_status":"ok","oneline":"设计到底是什么？作为一名从业二十余年并且具有世界影响的设计师，原研哉对自己提出了这样一个问题。为了给出自己的答案，他走了那么长的路，做了那么多的探索。“RE-DESIGN——二十一世纪的日常用品再设计”展真是一个有趣的展览，但又不仅仅是有趣","intro_short":"设计到底是什么？作为一名从业二十余年并且具有世界影响的设计师，原研哉对自己提出了这样一个问题。","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/成长/自卑与超越.epub","id":"demo-0026","kind":"file","rel":"示例书库/成长/自卑与超越.epub","name":"自卑与超越.epub","title":"自卑与超越","author":"阿德勒","author_from":"demo","ext":"epub","size":389120,"total_size":389120,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/成长/自卑与超越.epub","size":389120,"ext":"epub","mtime":1767225600}],"category":"个人成长·方法论","category_src":"demo","author_famous":true,"rating":7.6,"votes":1746,"douban":{"id":"36139149","url":"https://book.douban.com/subject/36139149/","title":"自卑与超越","author":"阿尔弗雷德·阿德勒","rating":7.6,"votes":1746,"year":"2022","publisher":"上海译文出版社","pages":300,"intro":"我们每个人都有不同程度的自卑感。自卑感，是人类改善自身处境的动力之源，是人类追求优越感的原动力。在《自卑与超越》中，阿德勒首创“自卑情结”一词，阐述了自卑感的行成及其对个人成长的影响，教导个人如何超越自卑感，将自卑感转变为对优越感的恰当追求，从而超越自我、活出生命的意义。 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ 作为一名心理咨询师，常常会与自卑的人打交道。尤其在中国，对孩子的教育有太多的与“隔壁家小明”的比较和追求完美的倾向。“人比人，气死人”，因此造就了大量的自卑和自恋的人（其本质还是自卑）。因此，阿德勒这本对于自卑以及超越自卑的著作，就有了特别的意义与价值。 阿德勒在这本著作里希望个体能直面自己的自卑并超越之，同时，走向关系，拥有社会兴趣，承担社会责任，而不只...(展开全部)","cover":"https://img9.doubanio.com/view/subject/l/public/s34345186.jpg","confidence":1.0,"matched_query":"自卑与超越"},"douban_status":"ok","oneline":"我们每个人都有不同程度的自卑感。自卑感，是人类改善自身处境的动力之源，是人类追求优越感的原动力。在《自卑与超越》中，阿德勒首创“自卑情结”一词，阐述了自卑感的行成及其对个人成长的影响，教导个人如何超越自卑感，将自卑感转变为对优越感的恰当追求","intro_short":"我们每个人都有不同程度的自卑感。","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/传记/史蒂夫·乔布斯传.epub","id":"demo-0027","kind":"file","rel":"示例书库/传记/史蒂夫·乔布斯传.epub","name":"史蒂夫·乔布斯传.epub","title":"史蒂夫·乔布斯传","author":"沃尔特·艾萨克森","author_from":"demo","ext":"epub","size":524288,"total_size":524288,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/传记/史蒂夫·乔布斯传.epub","size":524288,"ext":"epub","mtime":1767225600}],"category":"传记·回忆录·口述","category_src":"demo","author_famous":true,"rating":8.8,"votes":65819,"douban":{"id":"6798611","url":"https://book.douban.com/subject/6798611/","title":"史蒂夫·乔布斯传","author":"沃尔特·艾萨克森","rating":8.8,"votes":65819,"year":"2011","publisher":"中信出版社","pages":560,"intro":"这本乔布斯唯一授权的官方传记，在2011年上半年由美国出版商西蒙舒斯特对外发布出版消息以来，备受全球媒体和业界瞩目，这本书的全球出版日期最终确定为2011年11月21日，简体中文版也将同步上市。 两年多的时间，与乔布斯40多次的面对面倾谈，以及与乔布斯一百多个家庭成员、 朋友、竞争对手、同事的不受限的采访，造就了这本独家传记。 尽管乔布斯给予本书的采访和创作全面的配合，但他对内容从不干涉，也不要求出版前阅读全文的权利。对于任何资源和关联的人，他都不设限，甚至鼓励他所熟知的人袒露出自己的心声。 “我已经做了很多并不值得自豪的事情，比如23岁时就让我的女友怀了孕，以及我对这件事的处理方式”，他说， “对我而言，没有什么不可以对外袒露的。” 谈及和他共过事的人以及竞争对手，他直言不讳，甚至尖酸刻薄。他的激情、精力、欲望、完美主义、艺术修养、残暴还有对掌控权...(展开全部)","cover":"https://img3.doubanio.com/view/subject/l/public/s6974202.jpg","confidence":1.0,"matched_query":"史蒂夫·乔布斯传"},"douban_status":"ok","oneline":"这本乔布斯唯一授权的官方传记，在2011年上半年由美国出版商西蒙舒斯特对外发布出版消息以来，备受全球媒体和业界瞩目，这本书的全球出版日期最终确定为2011年11月21日，简体中文版也将同步上市。 两年多的时间，与乔布斯40多次的面对面倾谈，","intro_short":"这本乔布斯唯一授权的官方传记，在2011年上半年由美国出版商西蒙舒斯特对外发布出版消息以来，备受全球媒体和业界瞩目，这本书的全球出版日期最终确定为2011年…","suspect":false,"read":false,"locked_keep":false,"__demo":true},{"sk":"path:示例书库/杂项/小王子.epub","id":"demo-0028","kind":"file","rel":"示例书库/杂项/小王子.epub","name":"小王子.epub","title":"小王子","author":"圣埃克苏佩里","author_from":"demo","ext":"epub","size":98304,"total_size":98304,"mtime":1767225600,"dup_count":1,"files":[{"rel":"示例书库/杂项/小王子.epub","size":98304,"ext":"epub","mtime":1767225600}],"category":"童书·青少年","category_src":"demo","author_famous":true,"rating":9.1,"votes":805151,"douban":{"id":"1084336","url":"https://book.douban.com/subject/1084336/","title":"小王子","author":"安东尼·德·圣-埃克苏佩里","rating":9.1,"votes":805151,"year":"2003","publisher":"人民文学出版社","pages":97,"intro":"小王子是一个超凡脱俗的仙童，他住在一颗只比他大一丁点儿的小行星上。陪伴他的是一朵他非常喜爱的小玫瑰花。但玫瑰花的虚荣心伤害了小王子对她的感情。小王子告别小行星，开始了遨游太空的旅行。他先后访问了六个行星，各种见闻使他陷入忧伤，他感到大人们荒唐可笑、太不正常。只有在其中一个点灯人的星球上，小王子才找到一个可以作为朋友的人。但点灯人的天地又十分狭小，除了点灯人他自己，不能容下第二个人。在地理学家的指点下，孤单的小王子来到人类居住的地球。 小王子发现人类缺乏想象力，只知像鹦鹉那样重复别人讲过的话。小王子这时越来越思念自己星球上的那枝小玫瑰。后来，小王子遇到一只小狐狸，小王子用耐心征服了小狐狸，与它结成了亲密的朋友。小狐狸把自己心中的秘密——肉眼看不见事务的本质，只有用心灵才能洞察一切——作为礼物，送给小王子。用这个秘密，小王子在撒哈拉大沙漠与遇险的飞行员一...(展开全部)","cover":"https://img3.doubanio.com/view/subject/l/public/s1237549.jpg","confidence":1.0,"matched_query":"小王子"},"douban_status":"ok","oneline":"小王子是一个超凡脱俗的仙童，他住在一颗只比他大一丁点儿的小行星上。陪伴他的是一朵他非常喜爱的小玫瑰花。但玫瑰花的虚荣心伤害了小王子对她的感情。小王子告别小行星，开始了遨游太空的旅行。他先后访问了六个行星，各种见闻使他陷入忧伤，他感到大人们荒","intro_short":"小王子是一个超凡脱俗的仙童，他住在一颗只比他大一丁点儿的小行星上。","suspect":false,"read":false,"locked_keep":false,"__demo":true}],"scansets":[{"sk":"dir:示例书库/图册/芥子园画传","id":"demo-0029","kind":"scanset","rel":"示例书库/图册/芥子园画传","name":"芥子园画传","title":"芥子园画传","author":"王概","author_from":"demo","ext":"","size":3198458880,"total_size":3198458880,"mtime":1767225600,"pages":260,"dup_count":1,"files":[],"category":"设计·艺术·摄影","category_src":"demo","author_famous":false,"rating":9.5,"votes":30,"douban":{"id":"26719590","url":"https://book.douban.com/subject/26719590/","title":"芥子园画传","author":"王概","rating":9.5,"votes":30,"year":"2016","publisher":"山东美术出版社","pages":1576,"intro":"《芥子园画传》自从清初出版以来，一直是学习中国画必不可少的入门教材。这部书涵盖了山水、花鸟、人物、屋宇等内容。全书以图谱为主文字为辅，从用笔方法到构图造型，从创作示范到章法布局，为初学者提供了一套完整的学习方法。 清初名士李渔（号笠翁）的女婿沈心友藏有明代山水画家李流芳的《课徒山水画稿》43页。在李渔的协助下，沈心友请嘉兴籍山水名家王概整理增编了90页，并附临摹古人各式山水画40幅，且在书首编写了《青在堂画学浅说》。整理好之后交给李渔审阅。李渔认为其质量很高。他还亲自作序，并以自己私宅的名字“芥子园”将此书定名为《芥子园画传》。这部书稿于康熙十八年（1679年）在“芥子园”套版精刻成书。 此后沈心友又请王概与兄弟王蓍、王臬，共同编绘了“兰竹梅菊”与“花卉翎毛”两部书稿，这就是《芥子园画传》的第二集和第三集。本来沈心友还计划编绘关于人物写真的第四集，可...(展开全部)","cover":"https://img9.doubanio.com/view/subject/l/public/s28395035.jpg","confidence":1.0,"matched_query":"芥子园画传"},"douban_status":"ok","oneline":"《芥子园画传》自从清初出版以来，一直是学习中国画必不可少的入门教材。这部书涵盖了山水、花鸟、人物、屋宇等内容。全书以图谱为主文字为辅，从用笔方法到构图造型，从创作示范到章法布局，为初学者提供了一套完整的学习方法。 清初名士李渔（号笠翁）的女","intro_short":"自从清初出版以来，一直是学习中国画必不可少的入门教材。","suspect":false,"read":false,"locked_keep":true,"__demo":true},{"sk":"dir:示例书库/图册/营造法式","id":"demo-0030","kind":"scanset","rel":"示例书库/图册/营造法式","name":"营造法式","title":"营造法式","author":"李诫","author_from":"demo","ext":"","size":3298458880,"total_size":3298458880,"mtime":1767225600,"pages":268,"dup_count":1,"files":[],"category":"历史·地理","category_src":"demo","author_famous":false,"rating":9.0,"votes":318,"douban":{"id":"1912129","url":"https://book.douban.com/subject/1912129/","title":"营造法式","author":"李诫","rating":9.0,"votes":318,"year":"2006","publisher":"人民出版社","pages":422,"intro":"《营造法式》是北宋时期将作监李诫组织编撰的由官方颁行的一部建筑设计学著作，完成于北宋元符三年（1100年），首次刊行于北宋崇宁二年（1103年）。全书有“总释”二卷、“制度”十三卷、“功限”十卷、“料例”三卷、“图样”六卷、“目录”和“看详”（补遗卷）各一卷，共计三十六卷，此外前有“劄子”和“序”。这部中国古籍中最完整、最具有理论体系的建筑设计学经典，融人文与技术为一体，不仅标志着我国古代建筑技术已经发展到了一个新的水平，同时也是中国古代设计思想理论发展的重要界碑。而且，还形成了现代中国的“营造之学”，魅力无比。","cover":"https://img2.doubanio.com/view/subject/l/public/s10431491.jpg","confidence":1.0,"matched_query":"营造法式"},"douban_status":"ok","oneline":"《营造法式》是北宋时期将作监李诫组织编撰的由官方颁行的一部建筑设计学著作，完成于北宋元符三年（1100年），首次刊行于北宋崇宁二年（1103年）。全书有“总释”二卷、“制度”十三卷、“功限”十卷、“料例”三卷、“图样”六卷、“目录”和“看详","intro_short":"是北宋时期将作监李诫组织编撰的由官方颁行的一部建筑设计学著作，完成于北宋元符三年（1100年），首次刊行于北宋崇宁二年（1103年）。","suspect":false,"read":false,"locked_keep":true,"__demo":true}]}</script>
+<script id="DOUBAN_PACK" type="application/json">{"generated_at":"2026-11-11","source":"douban.com Top250 + tag 高分榜","count":1334,"items":[{"t":"活着","a":"余华","r":9.4,"v":929570,"i":"4913064"},{"t":"追风筝的人","a":"卡勒德·胡赛尼","r":8.9,"v":831838,"i":"1770782"},{"t":"小王子","a":"安东尼·德·圣-埃克苏佩里","r":9.1,"v":805162,"i":"1084336"},{"t":"解忧杂货店","a":"东野圭吾","r":8.5,"v":789613,"i":"25862578"},{"t":"嫌疑人X的献身","a":"东野圭吾","r":8.9,"v":561735,"i":"3211779"},{"t":"白夜行","a":"东野圭吾","r":9.2,"v":546164,"i":"10554308"},{"t":"三体","a":"刘慈欣","r":8.9,"v":519279,"i":"2567698"},{"t":"百年孤独","a":"加西亚·马尔克斯","r":9.3,"v":482217,"i":"6082808"},{"t":"红楼梦","a":"曹雪芹","r":9.7,"v":471295,"i":"1007305"},{"t":"围城","a":"钱锺书","r":9.0,"v":464412,"i":"1008145"},{"t":"房思琪的初恋乐园","a":"林奕含","r":9.3,"v":430198,"i":"27614904"},{"t":"平凡的世界（全三部）","a":"路遥","r":9.0,"v":344418,"i":"1200840"},{"t":"我们仨","a":"杨绛","r":8.8,"v":327360,"i":"1023045"},{"t":"三体Ⅱ","a":"刘慈欣","r":9.3,"v":319612,"i":"3066477"},{"t":"1984","a":"乔治·奥威尔","r":9.4,"v":316374,"i":"4820710"},{"t":"霍乱时期的爱情","a":"加西亚·马尔克斯","r":9.0,"v":315387,"i":"10594787"},{"t":"三体Ⅲ","a":"刘慈欣","r":9.2,"v":297690,"i":"5363767"},{"t":"局外人","a":"阿尔贝·加缪","r":9.1,"v":279762,"i":"4908885"},{"t":"长安的荔枝","a":"马伯庸","r":8.5,"v":274038,"i":"36104107"},{"t":"傲慢与偏见","a":"奥斯丁","r":8.9,"v":245586,"i":"1083428"},{"t":"边城","a":"沈从文","r":8.7,"v":245316,"i":"1057244"},{"t":"飘","a":"玛格丽特·米切尔","r":9.3,"v":232151,"i":"1068920"},{"t":"你当像鸟飞往你的山","a":"塔拉·韦斯特弗","r":8.7,"v":231410,"i":"33440205"},{"t":"骆驼祥子","a":"老舍","r":8.6,"v":230146,"i":"1043815"},{"t":"窗边的小豆豆","a":"黑柳彻子","r":8.9,"v":228765,"i":"1007914"},{"t":"月亮和六便士","a":"毛姆","r":8.9,"v":227261,"i":"1858513"},{"t":"三体全集","a":"刘慈欣","r":9.5,"v":221375,"i":"6518605"},{"t":"万历十五年","a":"黄仁宇","r":9.0,"v":220824,"i":"1041482"},{"t":"人类简史","a":"尤瓦尔·赫拉利","r":9.1,"v":217653,"i":"25985021"},{"t":"许三观卖血记","a":"余华","r":9.2,"v":207950,"i":"4760224"},{"t":"明朝那些事儿（1-9）","a":"当年明月","r":9.2,"v":207829,"i":"3674537"},{"t":"撒哈拉的故事","a":"三毛","r":9.2,"v":203294,"i":"1060068"},{"t":"蛤蟆先生去看心理医生","a":"罗伯特·戴博德","r":8.3,"v":196842,"i":"35143790"},{"t":"悉达多","a":"赫尔曼·黑塞","r":9.1,"v":189845,"i":"26980487"},{"t":"三国演义（全二册）","a":"罗贯中","r":9.3,"v":186013,"i":"1019568"},{"t":"动物农场","a":"乔治·奥威尔","r":9.3,"v":185009,"i":"2035179"},{"t":"呐喊","a":"鲁迅","r":9.2,"v":180813,"i":"1449351"},{"t":"朝花夕拾","a":"鲁迅","r":9.1,"v":176933,"i":"1449352"},{"t":"黄金时代","a":"王小波","r":8.9,"v":174857,"i":"1089243"},{"t":"恶意","a":"东野圭吾","r":8.7,"v":174350,"i":"26877752"},{"t":"城南旧事","a":"林海音 文","r":9.1,"v":173381,"i":"1254588"},{"t":"无人生还","a":"阿加莎·克里斯蒂","r":9.0,"v":171806,"i":"3006581"},{"t":"杀死一只知更鸟","a":"哈珀·李","r":9.2,"v":165239,"i":"6781808"},{"t":"沉默的大多数","a":"王小波","r":9.1,"v":162587,"i":"1054685"},{"t":"素食者","a":"韩江","r":8.1,"v":162548,"i":"35534519"},{"t":"绝叫","a":"叶真中显","r":8.9,"v":158515,"i":"35031587"},{"t":"一个陌生女人的来信","a":"斯蒂芬·茨威格","r":8.7,"v":157883,"i":"2154960"},{"t":"东方快车谋杀案","a":"阿加莎·克里斯蒂","r":9.1,"v":157001,"i":"1827374"},{"t":"太白金星有点烦","a":"马伯庸","r":9.0,"v":155647,"i":"36328704"},{"t":"秋园","a":"杨本芬","r":9.0,"v":151495,"i":"34998019"},{"t":"被讨厌的勇气","a":"岸见一郎","r":8.5,"v":149017,"i":"26369699"},{"t":"福尔摩斯探案全集","a":"阿·柯南道尔","r":9.3,"v":148342,"i":"1040211"},{"t":"送你一颗子弹","a":"刘瑜","r":8.6,"v":147506,"i":"4238362"},{"t":"安徒生童话故事集","a":"安徒生","r":9.3,"v":146473,"i":"1046209"},{"t":"我的天才女友","a":"埃莱娜·费兰特","r":8.8,"v":143656,"i":"26878124"},{"t":"天龙八部","a":"金庸","r":9.2,"v":142444,"i":"1255625"},{"t":"哈利·波特","a":"J·K·罗琳","r":9.7,"v":142102,"i":"24531956"},{"t":"献给阿尔吉侬的花束","a":"丹尼尔·凯斯","r":9.1,"v":141583,"i":"26362836"},{"t":"基督山伯爵","a":"大仲马","r":9.1,"v":139567,"i":"1085860"},{"t":"灿烂千阳","a":"卡勒德·胡赛尼","r":8.9,"v":136532,"i":"2143732"},{"t":"我与地坛","a":"史铁生","r":9.2,"v":135456,"i":"1209899"},{"t":"肖申克的救赎","a":"斯蒂芬·金","r":9.1,"v":131879,"i":"1829226"},{"t":"白鹿原","a":"陈忠实","r":9.2,"v":130150,"i":"10564071"},{"t":"爱你就像爱生命","a":"王小波","r":8.8,"v":121492,"i":"3071717"},{"t":"消失的13级台阶","a":"高野和明","r":8.5,"v":121176,"i":"34996429"},{"t":"笑傲江湖（全四册）","a":"金庸","r":9.1,"v":119548,"i":"1002299"},{"t":"新名字的故事","a":"埃莱娜·费兰特","r":9.2,"v":115716,"i":"26986954"},{"t":"情书","a":"岩井俊二","r":8.6,"v":115179,"i":"1080370"},{"t":"乡土中国","a":"费孝通","r":9.2,"v":112357,"i":"1795079"},{"t":"置身事内","a":"兰小欢","r":9.1,"v":110144,"i":"35546622"},{"t":"神雕侠侣","a":"金庸","r":8.9,"v":107831,"i":"1255624"},{"t":"罗杰疑案","a":"阿加莎·克里斯蒂","r":9.3,"v":106070,"i":"21371175"},{"t":"西游记（全二册）","a":"吴承恩","r":9.1,"v":105158,"i":"1029553"},{"t":"一句顶一万句","a":"刘震云","r":8.8,"v":104108,"i":"3633461"},{"t":"失踪的孩子","a":"埃莱娜·费兰特","r":9.2,"v":104034,"i":"30172069"},{"t":"少有人走的路","a":"M·斯科特·派克","r":8.4,"v":103534,"i":"1775691"},{"t":"刀锋","a":"毛姆","r":9.0,"v":103495,"i":"2035162"},{"t":"梦里花落知多少","a":"三毛","r":8.8,"v":103304,"i":"2070844"},{"t":"格林童话全集","a":"格林兄弟","r":9.1,"v":103235,"i":"1043008"},{"t":"鼠疫","a":"阿尔贝·加缪","r":9.1,"v":98012,"i":"24257229"},{"t":"球状闪电","a":"刘慈欣","r":8.7,"v":97993,"i":"1192090"},{"t":"厌女","a":"上野千鹤子","r":9.1,"v":96965,"i":"25836270"},{"t":"在细雨中呼喊","a":"余华","r":8.8,"v":94957,"i":"20421947"},{"t":"离开的，留下的","a":"埃莱娜·费兰特","r":8.9,"v":94907,"i":"27104959"},{"t":"夜晚的潜水艇","a":"陈春成","r":8.3,"v":94509,"i":"35005045"},{"t":"射雕英雄传","a":"金庸","r":9.1,"v":93789,"i":"1044547"},{"t":"克莱因壶","a":"冈岛二人","r":8.8,"v":92633,"i":"33658616"},{"t":"呼兰河传","a":"萧红","r":9.0,"v":92046,"i":"1060852"},{"t":"邓小平时代","a":"傅高义","r":9.4,"v":90339,"i":"20424526"},{"t":"巨人的陨落","a":"肯·福莱特","r":8.9,"v":89867,"i":"26698660"},{"t":"水浒传（全二册）","a":"施耐庵","r":8.7,"v":87866,"i":"1008357"},{"t":"雷雨","a":"曹禺","r":8.7,"v":87195,"i":"1013416"},{"t":"始于极限","a":"上野千鹤子","r":9.0,"v":87067,"i":"35966120"},{"t":"台北人","a":"白先勇","r":9.0,"v":86050,"i":"5337248"},{"t":"中国历代政治得失","a":"钱穆","r":9.2,"v":85482,"i":"1003479"},{"t":"圣母","a":"秋吉理香子","r":8.1,"v":84707,"i":"30475757"},{"t":"一个叫欧维的男人决定去死","a":"弗雷德里克·巴克曼","r":9.1,"v":83882,"i":"26672693"},{"t":"孩子你慢慢来","a":"龙应台","r":8.7,"v":83778,"i":"4207781"},{"t":"额尔古纳河右岸","a":"迟子建","r":8.9,"v":82568,"i":"34432750"},{"t":"明亮的夜晚","a":"崔恩荣","r":9.0,"v":81744,"i":"36457094"},{"t":"麦琪的礼物","a":"欧·亨利","r":8.7,"v":80998,"i":"1051193"},{"t":"从零开始的女性主义","a":"上野千鹤子","r":8.7,"v":80460,"i":"35523099"},{"t":"罗生门","a":"芥川龙之介","r":8.7,"v":77628,"i":"3136271"},{"t":"最好的我们","a":"八月长安","r":8.8,"v":77440,"i":"24754316"},{"t":"彷徨","a":"鲁迅","r":9.3,"v":76897,"i":"1449348"},{"t":"浮生六记","a":"沈复","r":8.7,"v":76347,"i":"1088581"},{"t":"非暴力沟通","a":"马歇尔·卢森堡","r":8.4,"v":75457,"i":"3533221"},{"t":"美丽新世界","a":"阿道司·赫胥黎","r":9.1,"v":75439,"i":"27002046"},{"t":"树上的男爵","a":"伊塔洛·卡尔维诺","r":9.1,"v":73252,"i":"6789605"},{"t":"斯通纳","a":"约翰·威廉斯","r":8.8,"v":73148,"i":"26425831"},{"t":"窄门","a":"安德烈·纪德","r":7.4,"v":71807,"i":"30331835"},{"t":"飞鸟集","a":"罗宾德拉纳德·泰戈尔","r":8.9,"v":71571,"i":"1058661"},{"t":"江城","a":"彼得·海斯勒","r":9.1,"v":71033,"i":"7060185"},{"t":"这些人，那些事","a":"吴念真","r":8.8,"v":70775,"i":"6388661"},{"t":"新参者","a":"东野圭吾","r":8.2,"v":70231,"i":"26639966"},{"t":"金锁记","a":"张爱玲","r":8.7,"v":69815,"i":"3017857"},{"t":"我在北京送快递","a":"胡安焉","r":8.1,"v":69291,"i":"36150423"},{"t":"生死疲劳","a":"莫言","r":8.9,"v":68979,"i":"35587028"},{"t":"一桩事先张扬的凶杀案","a":"加西亚·马尔克斯","r":8.7,"v":68337,"i":"24382569"},{"t":"悲惨世界（上中下）","a":"雨果","r":9.1,"v":67979,"i":"1205054"},{"t":"倚天屠龙记","a":"金庸","r":8.7,"v":67460,"i":"1070851"},{"t":"时间简史","a":"史蒂芬·霍金","r":8.9,"v":66247,"i":"1034282"},{"t":"史蒂夫·乔布斯传","a":"沃尔特·艾萨克森","r":8.8,"v":65819,"i":"6798611"},{"t":"也许你该找个人聊聊","a":"洛莉·戈特利布","r":9.0,"v":65308,"i":"35481512"},{"t":"苏菲的世界","a":"乔斯坦·贾德","r":8.8,"v":65203,"i":"2284311"},{"t":"一千零一夜","a":"纳训","r":8.8,"v":64881,"i":"1035848"},{"t":"草房子","a":"曹文轩","r":9.0,"v":64674,"i":"1052990"},{"t":"一间只属于自己的房间","a":"弗吉尼亚·伍尔夫","r":9.2,"v":64521,"i":"34835082"},{"t":"桶川跟踪狂杀人事件","a":"清水洁","r":9.0,"v":64447,"i":"35094680"},{"t":"寻路中国","a":"彼得·海斯勒","r":9.0,"v":61960,"i":"5414391"},{"t":"陆犯焉识","a":"严歌苓","r":8.9,"v":61765,"i":"6880158"},{"t":"哭泣的骆驼","a":"三毛","r":9.0,"v":61601,"i":"1029111"},{"t":"雨季不再来","a":"三毛","r":8.8,"v":61298,"i":"2136140"},{"t":"孽子","a":"白先勇","r":9.2,"v":61193,"i":"5337254"},{"t":"人间词话","a":"王国维","r":9.0,"v":59670,"i":"1203426"},{"t":"克拉拉与太阳","a":"石黑一雄","r":8.2,"v":59583,"i":"35315153"},{"t":"显微镜下的大明","a":"马伯庸","r":8.7,"v":59552,"i":"30414743"},{"t":"鹿鼎记","a":"金庸","r":8.9,"v":58892,"i":"1212893"},{"t":"东京八平米","a":"吉井忍","r":8.4,"v":58587,"i":"36096287"},{"t":"小径分岔的花园","a":"豪尔赫·路易斯·博尔赫斯","r":8.9,"v":58228,"i":"25796120"},{"t":"最好的告别","a":"阿图·葛文德","r":9.0,"v":57976,"i":"26576861"},{"t":"爱的艺术","a":"艾·弗洛姆","r":8.8,"v":57682,"i":"3026879"},{"t":"面纱","a":"威廉·萨默塞特·毛姆","r":9.0,"v":57605,"i":"26757680"},{"t":"枪炮、病菌与钢铁","a":"贾雷德·戴蒙德","r":8.7,"v":57465,"i":"1813841"},{"t":"野草","a":"鲁迅","r":9.5,"v":57409,"i":"1915958"},{"t":"遥远的救世主","a":"豆豆","r":8.5,"v":57080,"i":"1322455"},{"t":"卡拉马佐夫兄弟","a":"陀思妥耶夫斯基","r":9.6,"v":56801,"i":"25887924"},{"t":"尼罗河上的惨案","a":"阿加莎·克里斯蒂","r":8.7,"v":56540,"i":"1818347"},{"t":"永恒的终结","a":"艾萨克·阿西莫夫","r":9.1,"v":56048,"i":"25829693"},{"t":"哈姆莱特","a":"莎士比亚","r":8.7,"v":55534,"i":"1006197"},{"t":"故事新编","a":"鲁迅","r":9.5,"v":53466,"i":"2046909"},{"t":"你好，旧时光（上 下）","a":"八月长安","r":8.7,"v":53027,"i":"4166819"},{"t":"祈祷落幕时","a":"东野圭吾","r":7.8,"v":52430,"i":"26118072"},{"t":"可能性的艺术","a":"刘瑜","r":9.1,"v":52110,"i":"35819419"},{"t":"不能承受的生命之轻","a":"米兰·昆德拉","r":8.8,"v":51722,"i":"4920007"},{"t":"遥远的向日葵地","a":"李娟","r":9.1,"v":51584,"i":"27184303"},{"t":"海子的诗","a":"海子","r":9.0,"v":50798,"i":"1011754"},{"t":"流俗地","a":"黎紫书","r":9.1,"v":50624,"i":"35430425"},{"t":"冬牧场","a":"李娟","r":9.1,"v":50189,"i":"10522856"},{"t":"万水千山走遍","a":"三毛","r":8.9,"v":50109,"i":"1036490"},{"t":"四世同堂","a":"老舍","r":9.4,"v":49610,"i":"3183775"},{"t":"历史深处的忧虑","a":"林达","r":9.0,"v":48407,"i":"1027191"},{"t":"檀香刑","a":"莫言","r":9.3,"v":47860,"i":"26905337"},{"t":"长日将尽","a":"石黑一雄","r":8.9,"v":47852,"i":"30142261"},{"t":"恶女的告白","a":"叶真中显","r":8.5,"v":47688,"i":"36743030"},{"t":"刘擎西方现代思想讲义","a":"刘擎","r":9.2,"v":47582,"i":"35313227"},{"t":"德米安","a":"赫尔曼·黑塞","r":8.9,"v":47316,"i":"3578470"},{"t":"红手指","a":"东野圭吾","r":8.0,"v":47177,"i":"26651926"},{"t":"文学回忆录","a":"木心 讲述","r":9.1,"v":46951,"i":"20440644"},{"t":"倾城之恋","a":"张爱玲","r":8.9,"v":46510,"i":"10757940"},{"t":"沧浪之水","a":"阎真","r":8.4,"v":46371,"i":"1054917"},{"t":"失明症漫记","a":"若泽·萨拉马戈","r":9.0,"v":45609,"i":"20428302"},{"t":"你的夏天还好吗？","a":"金爱烂","r":8.7,"v":44097,"i":"36109174"},{"t":"看不见的城市","a":"伊塔洛·卡尔维诺","r":9.0,"v":44006,"i":"10555509"},{"t":"鹿川有许多粪","a":"李沧东","r":8.9,"v":43661,"i":"35517022"},{"t":"叫魂","a":"孔飞力","r":9.2,"v":43536,"i":"25912076"},{"t":"告白","a":"湊佳苗","r":8.8,"v":42986,"i":"26681984"},{"t":"教父","a":"马里奥·普佐","r":9.0,"v":42867,"i":"1092335"},{"t":"罪与罚","a":"陀思妥耶夫斯基","r":9.3,"v":42636,"i":"1858568"},{"t":"理想国","a":"柏拉图","r":8.8,"v":42420,"i":"1004821"},{"t":"你一生的故事","a":"特德·姜","r":8.7,"v":41911,"i":"26295448"},{"t":"地下室手记","a":"陀思妥耶夫斯基","r":9.2,"v":41578,"i":"34990839"},{"t":"茶馆","a":"老舍","r":9.2,"v":41518,"i":"1036613"},{"t":"毛泽东选集","a":"毛泽东","r":9.6,"v":40385,"i":"1139360"},{"t":"半生缘","a":"张爱玲","r":9.1,"v":40310,"i":"10757938"},{"t":"平面国","a":"埃德温·A·艾勃特","r":9.2,"v":40293,"i":"35170896"},{"t":"翦商","a":"李硕","r":8.8,"v":40246,"i":"36096304"},{"t":"纳瓦尔宝典","a":"埃里克·乔根森","r":8.3,"v":39714,"i":"35876121"},{"t":"人间草木","a":"汪曾祺","r":9.2,"v":39465,"i":"1253310"},{"t":"包法利夫人","a":"福楼拜","r":9.1,"v":38233,"i":"25897678"},{"t":"安娜·卡列尼娜","a":"列夫·托尔斯泰","r":9.2,"v":38218,"i":"2253380"},{"t":"上帝掷骰子吗","a":"曹天元","r":9.2,"v":37613,"i":"1467022"},{"t":"明朝那些事儿","a":"当年明月","r":9.2,"v":37317,"i":"7163250"},{"t":"棋王·树王·孩子王","a":"阿城","r":9.2,"v":37308,"i":"26734559"},{"t":"美的历程","a":"李泽厚","r":9.2,"v":37137,"i":"3410718"},{"t":"工作、消费主义和新穷人","a":"齐格蒙特·鲍曼","r":8.3,"v":37099,"i":"35593780"},{"t":"人生的智慧","a":"叔本华","r":9.2,"v":36627,"i":"3261600"},{"t":"强风吹拂","a":"三浦紫苑","r":9.0,"v":36627,"i":"26210487"},{"t":"野火集","a":"龙应台","r":8.7,"v":36280,"i":"1426971"},{"t":"蛙","a":"莫言","r":8.9,"v":36242,"i":"26904483"},{"t":"放学后","a":"东野圭吾","r":7.3,"v":36230,"i":"27102207"},{"t":"把自己作为方法","a":"项飙","r":8.3,"v":36219,"i":"35092383"},{"t":"两京十五日","a":"马伯庸","r":8.0,"v":36088,"i":"35080870"},{"t":"当呼吸化为空气","a":"保罗·卡拉尼什","r":8.9,"v":36008,"i":"26896859"},{"t":"我的阿勒泰","a":"李娟","r":8.9,"v":35908,"i":"4884218"},{"t":"小狗钱钱","a":"博多·舍费尔","r":9.2,"v":35506,"i":"35295592"},{"t":"分成两半的子爵","a":"伊塔洛·卡尔维诺","r":8.8,"v":35482,"i":"10555486"},{"t":"浪潮之巅","a":"吴军","r":9.0,"v":35448,"i":"6709783"},{"t":"世上为什么要有图书馆","a":"杨素秋","r":8.8,"v":35438,"i":"36593622"},{"t":"金色梦乡","a":"伊坂幸太郎","r":9.0,"v":35264,"i":"5038409"},{"t":"亮剑","a":"都梁","r":9.0,"v":34816,"i":"1088022"},{"t":"索拉里斯星","a":"斯坦尼斯瓦夫·莱姆","r":8.5,"v":34493,"i":"35049755"},{"t":"人生的枷锁","a":"毛姆","r":9.1,"v":34400,"i":"2035171"},{"t":"激荡三十年（上）","a":"吴晓波","r":8.8,"v":34034,"i":"1970428"},{"t":"醉步男","a":"小林泰三","r":8.3,"v":33934,"i":"30359030"},{"t":"西线无战事","a":"埃里希·玛丽亚·雷马克","r":9.4,"v":33843,"i":"35272817"},{"t":"观念的水位","a":"刘瑜","r":8.3,"v":33801,"i":"20463108"},{"t":"九州·缥缈录","a":"江南","r":8.8,"v":33563,"i":"1321017"},{"t":"占星术杀人魔法","a":"岛田庄司","r":8.2,"v":33365,"i":"10740776"},{"t":"呼吸","a":"特德·姜","r":8.5,"v":33335,"i":"34672176"},{"t":"圣女的救济","a":"东野圭吾","r":7.6,"v":33153,"i":"26906797"},{"t":"亲密关系（第6版）","a":"罗兰·米勒","r":9.2,"v":33022,"i":"26585065"},{"t":"神们自己","a":"艾萨克·阿西莫夫","r":8.5,"v":32915,"i":"26264967"},{"t":"她对此感到厌烦","a":"妚鹤","r":9.0,"v":32570,"i":"36392723"},{"t":"诗经","a":"孔丘","r":9.5,"v":32541,"i":"1883245"},{"t":"足利女童连续失踪事件","a":"清水洁","r":8.9,"v":32453,"i":"35776315"},{"t":"13 67","a":"陳浩基","r":9.1,"v":32254,"i":"25897884"},{"t":"受戒","a":"汪曾祺","r":9.3,"v":31615,"i":"1760432"},{"t":"不存在的骑士","a":"伊塔洛·卡尔维诺","r":8.9,"v":31472,"i":"6789551"},{"t":"唐诗三百首","a":"蘅塘退士","r":9.4,"v":31374,"i":"1013267"},{"t":"仿生人会梦见电子羊吗？","a":"菲利普·迪克","r":8.7,"v":31276,"i":"27041533"},{"t":"从0到1","a":"彼得·蒂尔","r":7.5,"v":31210,"i":"26297606"},{"t":"南京大屠杀","a":"张纯如","r":9.7,"v":30988,"i":"26545308"},{"t":"哲学家们都干了些什么?","a":"林欣浩","r":8.5,"v":30906,"i":"26390842"},{"t":"红星照耀中国","a":"埃德加·斯诺埃","r":9.2,"v":30161,"i":"26820347"},{"t":"克林索尔的最后夏天","a":"赫尔曼·黑塞","r":7.9,"v":30158,"i":"30389968"},{"t":"二手时间","a":"S. A. 阿列克谢耶维奇","r":8.8,"v":29963,"i":"26704403"},{"t":"艺术的故事","a":"贡布里希","r":9.5,"v":29947,"i":"3162991"},{"t":"社会心理学","a":"戴维·迈尔斯","r":9.0,"v":29495,"i":"1476651"},{"t":"活出生命的意义","a":"维克多·弗兰克","r":8.5,"v":29467,"i":"5330333"},{"t":"海的女儿","a":"安徒生","r":9.1,"v":29370,"i":"1765512"},{"t":"钟表馆事件","a":"绫辻行人","r":8.3,"v":28909,"i":"26771719"},{"t":"挽救计划","a":"安迪·威尔","r":9.1,"v":28890,"i":"35494160"},{"t":"变形记","a":"弗朗茨·卡夫卡","r":9.2,"v":28383,"i":"35218475"},{"t":"绿毛水怪","a":"王小波","r":9.1,"v":28254,"i":"3518332"},{"t":"史记（全十册）","a":"司马迁","r":9.6,"v":28002,"i":"1077847"},{"t":"荒原狼","a":"赫尔曼·黑塞","r":9.0,"v":27887,"i":"3131626"},{"t":"2001：太空漫游","a":"阿瑟·克拉克","r":9.3,"v":27642,"i":"30471298"},{"t":"一日三秋","a":"刘震云","r":8.4,"v":27561,"i":"35496106"},{"t":"一个女人的故事","a":"安妮·埃尔诺","r":9.1,"v":27446,"i":"36078195"},{"t":"论语","a":"刘胜利","r":9.1,"v":27380,"i":"1964774"},{"t":"黑箱","a":"伊藤诗织","r":8.9,"v":27218,"i":"30484795"},{"t":"王尔德童话","a":"王尔德","r":9.1,"v":26321,"i":"1119839"},{"t":"筚路维艰","a":"萧冬连","r":9.5,"v":26257,"i":"26171466"},{"t":"温柔的夜","a":"三毛","r":9.1,"v":26165,"i":"2068249"},{"t":"天生有罪","a":"特雷弗·诺亚","r":9.0,"v":25998,"i":"30125030"},{"t":"曾国藩传","a":"张宏杰","r":8.7,"v":25898,"i":"30377678"},{"t":"思考，快与慢","a":"丹尼尔·卡尼曼","r":8.0,"v":25527,"i":"10785583"},{"t":"时间的秩序","a":"卡洛·罗韦利","r":8.9,"v":25517,"i":"33424487"},{"t":"阿勒泰的角落","a":"李娟","r":9.1,"v":25515,"i":"4881850"},{"t":"记一忘三二","a":"李娟","r":8.5,"v":25296,"i":"35040904"},{"t":"万物有灵且美","a":"吉米·哈利","r":8.9,"v":25179,"i":"4187411"},{"t":"银河系漫游指南","a":"道格拉斯·亚当斯","r":8.8,"v":24664,"i":"1394364"},{"t":"昨日的世界","a":"斯蒂芬·茨威格","r":9.3,"v":24562,"i":"27615361"},{"t":"圆圈正义","a":"罗翔","r":8.1,"v":24507,"i":"34815132"},{"t":"禅与摩托车维修艺术","a":"罗伯特·M.波西格","r":8.2,"v":24442,"i":"6811366"},{"t":"经济学原理（上下）","a":"曼昆","r":9.1,"v":24363,"i":"1028842"},{"t":"大明王朝1566","a":"刘和平","r":9.5,"v":24319,"i":"26925171"},{"t":"看不见的女性","a":"卡罗琳·克里亚多·佩雷斯","r":9.1,"v":24073,"i":"35942057"},{"t":"火星救援","a":"安迪·威尔","r":8.9,"v":24043,"i":"26586492"},{"t":"少年凯歌","a":"陈凯歌","r":9.3,"v":24003,"i":"1091203"},{"t":"帷幕","a":"阿加莎·克里斯蒂","r":9.1,"v":23631,"i":"26292535"},{"t":"五只小猪","a":"阿加莎·克里斯蒂","r":8.5,"v":23612,"i":"25986273"},{"t":"道德经","a":"黄元吉","r":9.5,"v":23527,"i":"1059258"},{"t":"莫失莫忘","a":"石黑一雄","r":8.8,"v":23416,"i":"30181685"},{"t":"海风中失落的血色馈赠","a":"阿利斯泰尔·麦克劳德","r":9.0,"v":23411,"i":"26357614"},{"t":"银河系搭车客指南","a":"道格拉斯·亚当斯","r":8.7,"v":23373,"i":"6265745"},{"t":"十万个为什么","a":"叶永烈","r":9.2,"v":23107,"i":"2160556"},{"t":"故事","a":"罗伯特·麦基","r":9.2,"v":22601,"i":"25976544"},{"t":"冰与火之歌","a":"乔治·R.R.马丁","r":9.5,"v":22559,"i":"25826936"},{"t":"父权制与资本主义","a":"上野千鹤子","r":9.2,"v":22537,"i":"34896921"},{"t":"君主论","a":"尼科洛·马基雅维里","r":8.7,"v":22445,"i":"1060774"},{"t":"心流","a":"米哈里·契克森米哈赖","r":8.1,"v":22375,"i":"27186106"},{"t":"我不知道该说什么，关于死亡还是爱情","a":"S·A·阿列克谢耶维奇","r":9.2,"v":22183,"i":"25884880"},{"t":"中国少年儿童百科全书（全四册）","a":"林崇德","r":9.4,"v":21850,"i":"1028409"},{"t":"倦怠社会","a":"韩炳哲","r":7.7,"v":21823,"i":"33442259"},{"t":"成为波伏瓦","a":"凯特·柯克帕特里克","r":9.0,"v":21750,"i":"35317169"},{"t":"桃花源没事儿","a":"马伯庸","r":7.6,"v":21431,"i":"37339619"},{"t":"存在主义咖啡馆","a":"莎拉·贝克韦尔","r":8.6,"v":21142,"i":"27170538"},{"t":"西西弗神话","a":"阿尔贝·加缪","r":8.8,"v":21051,"i":"24257403"},{"t":"喜鹊谋杀案","a":"安东尼·霍洛维茨","r":7.4,"v":20864,"i":"33445034"},{"t":"古文观止","a":"吴楚材","r":9.1,"v":20799,"i":"1014561"},{"t":"社会契约论","a":"卢梭","r":8.9,"v":20743,"i":"1277981"},{"t":"全球通史(上)","a":"斯塔夫里阿诺斯","r":9.2,"v":20501,"i":"1922216"},{"t":"油炸绿番茄","a":"范妮·弗拉格","r":8.7,"v":20366,"i":"36473837"},{"t":"大医·破晓篇","a":"马伯庸","r":8.6,"v":20221,"i":"36069426"},{"t":"银河帝国：基地七部曲","a":"艾萨克·阿西莫夫","r":9.5,"v":20088,"i":"26389895"},{"t":"天朝的崩溃","a":"茅海建","r":9.4,"v":20055,"i":"25935941"},{"t":"康熙的红票","a":"孙立天","r":9.3,"v":20040,"i":"36794613"},{"t":"薛兆丰经济学讲义","a":"薛兆丰","r":8.1,"v":20030,"i":"30280804"},{"t":"第七天","a":"余华","r":8.7,"v":19787,"i":"36174516"},{"t":"李光耀观天下","a":"李光耀","r":9.2,"v":19620,"i":"26413154"},{"t":"沙丘","a":"弗兰克·赫伯特","r":7.9,"v":19553,"i":"26836970"},{"t":"自私的基因","a":"理查德·道金斯","r":8.4,"v":19309,"i":"11445548"},{"t":"名侦探的献祭","a":"白井智之","r":7.1,"v":18968,"i":"36512989"},{"t":"俗女养成记","a":"江鹅","r":8.4,"v":18955,"i":"35608319"},{"t":"漫长的余生","a":"罗新","r":8.0,"v":18953,"i":"35909188"},{"t":"在峡江的转弯处","a":"陈行甲","r":8.8,"v":18874,"i":"35317149"},{"t":"太古和其他的时间","a":"奥尔加·托卡尔丘克","r":8.9,"v":18785,"i":"27132345"},{"t":"东晋门阀政治","a":"田余庆","r":9.5,"v":18636,"i":"10758290"},{"t":"咸的玩笑","a":"刘震云","r":8.4,"v":18594,"i":"37833272"},{"t":"尘埃落定","a":"阿来","r":8.6,"v":18451,"i":"35051822"},{"t":"怪画谜案","a":"雨穴","r":7.3,"v":18176,"i":"36858240"},{"t":"國史大綱（上下）","a":"錢穆","r":9.4,"v":18092,"i":"1046492"},{"t":"埃隆·马斯克传","a":"沃尔特·艾萨克森","r":8.6,"v":18076,"i":"36518892"},{"t":"一个无政府主义者的意外死亡","a":"达里奥·福","r":9.0,"v":17923,"i":"26649304"},{"t":"愤怒的葡萄","a":"约翰·斯坦贝克","r":9.1,"v":17904,"i":"33395266"},{"t":"白痴","a":"陀思妥耶夫斯基","r":9.3,"v":17315,"i":"25887933"},{"t":"从前我死去的家","a":"东野圭吾","r":7.7,"v":17275,"i":"30245830"},{"t":"潜规则（修订版）","a":"吴思","r":8.3,"v":17238,"i":"3580750"},{"t":"麒麟之翼","a":"东野圭吾","r":7.8,"v":17192,"i":"26387513"},{"t":"不原谅也没关系","a":"皮特·沃克","r":9.0,"v":17160,"i":"36132802"},{"t":"我也有一个梦想","a":"林达","r":9.0,"v":17103,"i":"1014825"},{"t":"现代艺术150年","a":"威尔·贡培兹","r":9.1,"v":17051,"i":"26854318"},{"t":"你是你吃出来的","a":"夏萌","r":8.7,"v":16847,"i":"27590675"},{"t":"谁杀了她","a":"东野圭吾","r":7.5,"v":16790,"i":"30210250"},{"t":"中国哲学简史","a":"冯友兰","r":9.3,"v":16754,"i":"20501147"},{"t":"悬崖山庄奇案","a":"阿加莎·克里斯蒂","r":8.3,"v":16662,"i":"24535899"},{"t":"爱欲之死","a":"韩炳哲","r":7.7,"v":16578,"i":"30389924"},{"t":"十角馆事件","a":"绫辻行人","r":7.0,"v":16390,"i":"26771717"},{"t":"社会性动物","a":"埃利奥特·阿伦森Elliot Aronson","r":9.0,"v":16323,"i":"2328458"},{"t":"贪婪的多巴胺","a":"丹尼尔·利伯曼","r":7.7,"v":16315,"i":"35545272"},{"t":"如首无作祟之物","a":"三津田信三","r":8.2,"v":16189,"i":"35406149"},{"t":"孙子兵法","a":"孙武","r":9.4,"v":15976,"i":"1949420"},{"t":"存在主义是一种人道主义","a":"让-保罗·萨特","r":8.4,"v":15910,"i":"10608319"},{"t":"蛇结","a":"弗朗索瓦·莫里亚克","r":8.3,"v":15850,"i":"37279279"},{"t":"鱼不存在","a":"露露·米勒","r":8.3,"v":15772,"i":"36096300"},{"t":"肠子的小心思","a":"朱莉娅·恩德斯","r":8.9,"v":15452,"i":"26706730"},{"t":"早安，怪物","a":"凯瑟琳·吉尔迪纳","r":9.0,"v":15263,"i":"36700758"},{"t":"打开一颗心","a":"斯蒂芬·韦斯塔比","r":9.1,"v":15118,"i":"30277179"},{"t":"象棋的故事","a":"斯蒂芬·茨威格","r":9.1,"v":15070,"i":"2158684"},{"t":"毛泽东传","a":"罗斯·特里尔","r":8.2,"v":15028,"i":"5246800"},{"t":"未来学大会","a":"斯坦尼斯瓦夫·莱姆","r":9.0,"v":15002,"i":"35330057"},{"t":"会饮篇","a":"柏拉图","r":9.3,"v":14923,"i":"21570668"},{"t":"坟","a":"鲁迅","r":9.6,"v":14672,"i":"1974029"},{"t":"众病之王","a":"悉达多·穆克吉","r":9.0,"v":14428,"i":"20507206"},{"t":"怪屋谜案","a":"雨穴","r":6.5,"v":14327,"i":"36407256"},{"t":"人生复本","a":"布莱克·克劳奇","r":7.8,"v":14315,"i":"27125958"},{"t":"小镇喧嚣","a":"吴毅","r":9.3,"v":14305,"i":"30122152"},{"t":"天幕红尘","a":"豆豆","r":8.3,"v":14305,"i":"24748615"},{"t":"庄子","a":"孙通海","r":9.4,"v":14166,"i":"2046236"},{"t":"爱，鸡尾酒与生化危机","a":"赵艺恩","r":7.6,"v":14156,"i":"36496555"},{"t":"乡下人的悲歌","a":"J.D. 万斯","r":7.6,"v":14127,"i":"27007881"},{"t":"Y的悲剧","a":"埃勒里·奎因","r":8.4,"v":13869,"i":"3348010"},{"t":"四个春天","a":"陆庆屹","r":8.5,"v":13830,"i":"30389935"},{"t":"弃长安","a":"张明扬","r":8.4,"v":13693,"i":"35678328"},{"t":"恶棍列传","a":"豪尔赫·路易斯·博尔赫斯","r":8.2,"v":13549,"i":"25796066"},{"t":"底牌","a":"阿加莎·克里斯蒂","r":8.1,"v":13436,"i":"24852594"},{"t":"控糖革命","a":"杰西·安佐斯佩","r":7.9,"v":13323,"i":"36707112"},{"t":"我看见的世界","a":"李飞飞","r":8.8,"v":13241,"i":"36672955"},{"t":"如果我们无法以光速前行","a":"金草叶","r":8.4,"v":13168,"i":"35802914"},{"t":"方舟","a":"夕木春央","r":7.8,"v":13147,"i":"36832093"},{"t":"跨越边界的社区（修订版）","a":"项飙","r":9.4,"v":13000,"i":"30116399"},{"t":"规训与惩罚","a":"米歇尔·福柯","r":9.3,"v":12925,"i":"1012307"},{"t":"当下的力量","a":"埃克哈特·托利","r":8.5,"v":12906,"i":"26815948"},{"t":"奥斯维辛","a":"劳伦斯·里斯","r":9.4,"v":12736,"i":"26861418"},{"t":"酒吧长谈","a":"马里奥·巴尔加斯·略萨","r":9.4,"v":12669,"i":"34933180"},{"t":"渴望生活","a":"欧文·斯通","r":9.1,"v":12621,"i":"3054821"},{"t":"好妈妈胜过好老师","a":"尹建莉","r":8.9,"v":12580,"i":"3465080"},{"t":"中国国家治理的制度逻辑","a":"周雪光","r":9.3,"v":12464,"i":"26901114"},{"t":"小岛经济学","a":"彼得·希夫","r":8.0,"v":12425,"i":"26985299"},{"t":"鳗鱼的旅行","a":"帕特里克•斯文松","r":8.7,"v":12360,"i":"35167939"},{"t":"国富论","a":"亚当·斯密","r":9.0,"v":12252,"i":"1261560"},{"t":"重走","a":"杨潇","r":8.8,"v":12222,"i":"35436901"},{"t":"祥瑞","a":"张向荣","r":8.7,"v":12067,"i":"35519560"},{"t":"雕刻时光","a":"安德烈·塔可夫斯基","r":9.4,"v":11855,"i":"26435510"},{"t":"扫鼠岭","a":"呼延云","r":7.6,"v":11791,"i":"35082103"},{"t":"异见时刻","a":"伊琳·卡蒙","r":8.4,"v":11710,"i":"30258976"},{"t":"我们为什么要睡觉？","a":"马修·沃克","r":8.4,"v":11705,"i":"35332778"},{"t":"以日为鉴","a":"分析师Boden","r":7.3,"v":11567,"i":"37467536"},{"t":"银河帝国1：基地","a":"艾萨克·阿西莫夫","r":8.8,"v":11483,"i":"26389900"},{"t":"五号屠场","a":"库尔特·冯内古特","r":8.5,"v":11459,"i":"35815592"},{"t":"中央帝国的财政密码","a":"郭建龙","r":8.4,"v":11444,"i":"27007549"},{"t":"紫颜色","a":"艾丽斯·沃克","r":8.8,"v":11394,"i":"36181310"},{"t":"八次危机","a":"温铁军","r":8.9,"v":11116,"i":"20394150"},{"t":"独裁者手册","a":"布鲁诺·德·梅斯奎塔","r":8.8,"v":11053,"i":"25881102"},{"t":"要有光","a":"梁鸿","r":8.9,"v":11051,"i":"37407380"},{"t":"当尼采哭泣","a":"欧文·亚隆","r":8.9,"v":11041,"i":"27018918"},{"t":"维特根斯坦传","a":"瑞·蒙克","r":9.1,"v":10933,"i":"6152040"},{"t":"带上她的眼睛","a":"刘慈欣","r":8.9,"v":10917,"i":"26423329"},{"t":"制造消费者","a":"安东尼·加卢佐","r":8.3,"v":10911,"i":"35921760"},{"t":"毕业","a":"东野圭吾","r":7.2,"v":10786,"i":"30317422"},{"t":"星之继承者","a":"詹姆斯·P.霍根","r":8.8,"v":10777,"i":"35271451"},{"t":"我杀了他","a":"东野圭吾","r":7.3,"v":10766,"i":"30317423"},{"t":"犹大之窗","a":"约翰·迪克森·卡尔","r":8.2,"v":10636,"i":"30441962"},{"t":"海伯利安","a":"丹·西蒙斯","r":9.1,"v":10275,"i":"25941890"},{"t":"万物简史","a":"比尔·布莱森","r":8.7,"v":10222,"i":"1225983"},{"t":"走出唯一真理观","a":"陈嘉映","r":8.6,"v":10069,"i":"34988734"},{"t":"果壳中的宇宙","a":"史蒂芬·霍金","r":8.5,"v":10017,"i":"1034279"},{"t":"堂吉诃德","a":"塞万提斯","r":8.8,"v":10015,"i":"25837852"},{"t":"存在主义心理治疗","a":"欧文·亚隆","r":9.5,"v":9849,"i":"26304954"},{"t":"幸福之路","a":"伯特兰·罗素","r":8.8,"v":9768,"i":"35302634"},{"t":"白","a":"韩江","r":7.2,"v":9686,"i":"35965039"},{"t":"极简宇宙史","a":"克里斯托弗·加尔法德","r":9.1,"v":9685,"i":"26697350"},{"t":"不被大风吹倒","a":"莫言","r":7.1,"v":9684,"i":"36978314"},{"t":"一个女人一生中的二十四小时","a":"斯蒂芬·茨威格","r":8.5,"v":9573,"i":"37482433"},{"t":"真希望我父母读过这本书","a":"菲利帕·佩里","r":8.6,"v":9530,"i":"35173329"},{"t":"三口棺材","a":"约翰·迪克森·卡尔","r":7.7,"v":9403,"i":"30324991"},{"t":"战国歧途","a":"刘勃","r":8.7,"v":9349,"i":"33436921"},{"t":"一本书读懂财报","a":"肖星","r":8.9,"v":9250,"i":"25926542"},{"t":"苏东坡新传","a":"李一冰","r":9.4,"v":9181,"i":"34996404"},{"t":"正面管教","a":"简·尼尔森","r":8.7,"v":9046,"i":"3420606"},{"t":"哥德尔、艾舍尔、巴赫","a":"侯世达","r":9.4,"v":9013,"i":"1291204"},{"t":"政治学通识","a":"包刚升","r":9.1,"v":8984,"i":"26658395"},{"t":"饥饿的盛世","a":"张宏杰","r":8.1,"v":8939,"i":"35888701"},{"t":"追问","a":"丁捷","r":7.6,"v":8699,"i":"26992670"},{"t":"旅行之木","a":"星野道夫","r":8.9,"v":8645,"i":"35331764"},{"t":"人生","a":"路遥","r":8.7,"v":8582,"i":"34953363"},{"t":"沉睡的森林","a":"东野圭吾","r":7.0,"v":8534,"i":"30330292"},{"t":"党员、党权与党争","a":"王奇生","r":9.3,"v":8504,"i":"5372471"},{"t":"孤岛的来访者","a":"方丈贵惠","r":7.7,"v":8367,"i":"36284336"},{"t":"盛夏方程式","a":"东野圭吾","r":7.5,"v":8159,"i":"30317420"},{"t":"精英的傲慢","a":"迈克尔·桑德尔","r":7.8,"v":8107,"i":"35586814"},{"t":"生育制度","a":"费孝通","r":9.2,"v":8059,"i":"30258045"},{"t":"一地鸡毛","a":"刘震云","r":8.7,"v":8010,"i":"36061380"},{"t":"遍地风流","a":"阿城","r":9.0,"v":7947,"i":"26278433"},{"t":"黑暗的左手","a":"厄休拉·勒古恩","r":8.4,"v":7834,"i":"26916012"},{"t":"拉丁美洲被切开的血管","a":"爱德华多·加莱亚诺","r":8.3,"v":7783,"i":"30335758"},{"t":"我才不想做家务","a":"纪静蓉","r":9.1,"v":7591,"i":"37436726"},{"t":"隳三都","a":"周思成","r":8.6,"v":7415,"i":"35336328"},{"t":"福格行为模型","a":"B.J.福格","r":8.7,"v":7398,"i":"35594496"},{"t":"公主之死","a":"李贞德","r":8.3,"v":7381,"i":"36197701"},{"t":"分析与思考","a":"黄奇帆","r":9.2,"v":7323,"i":"35149551"},{"t":"所罗门王的指环","a":"康拉德•洛伦茨","r":9.1,"v":7320,"i":"20283570"},{"t":"十日终焉·囚笼","a":"杀虫队队员","r":7.6,"v":7175,"i":"36573581"},{"t":"大地上我们转瞬即逝的绚烂","a":"王鸥行","r":8.3,"v":7024,"i":"36161290"},{"t":"三案始末","a":"温功义","r":8.9,"v":6941,"i":"25760457"},{"t":"社会学的想象力","a":"查尔斯·赖特·米尔斯","r":9.1,"v":6881,"i":"26874446"},{"t":"智人之上","a":"尤瓦尔·赫拉利","r":8.0,"v":6871,"i":"37001305"},{"t":"失控的照护","a":"叶真中显","r":8.0,"v":6847,"i":"36962267"},{"t":"现实不似你所见","a":"卡洛·罗韦利","r":9.2,"v":6825,"i":"27156306"},{"t":"人类灭绝","a":"高野和明","r":8.1,"v":6816,"i":"36136689"},{"t":"魔眼之匣谜案","a":"今村昌弘","r":7.4,"v":6791,"i":"35049753"},{"t":"公正","a":"迈克尔·桑德尔","r":9.1,"v":6779,"i":"20366368"},{"t":"金瓶梅","a":"兰陵笑笑生","r":9.5,"v":6770,"i":"26877943"},{"t":"芯片战争","a":"克里斯·米勒","r":8.3,"v":6702,"i":"36350632"},{"t":"童年的终结","a":"阿瑟·克拉克","r":8.8,"v":6604,"i":"26390907"},{"t":"地球尽头的温室","a":"金草叶","r":8.2,"v":6563,"i":"36351326"},{"t":"观看之道","a":"约翰·伯格","r":7.8,"v":6535,"i":"26427579"},{"t":"沙丘2","a":"弗兰克·赫伯特","r":8.3,"v":6525,"i":"27098887"},{"t":"羊道三部曲(套装共3册)","a":"李娟","r":9.4,"v":6504,"i":"27116878"},{"t":"撒旦探戈","a":"克拉斯诺霍尔卡伊·拉斯洛","r":8.5,"v":6357,"i":"26394865"},{"t":"哲学家的最后一课","a":"朱锐","r":8.7,"v":6329,"i":"37269363"},{"t":"身体从未忘记","a":"巴塞尔·范德考克","r":9.0,"v":6243,"i":"26796536"},{"t":"伯恩斯新情绪疗法","a":"戴维·伯恩斯","r":9.0,"v":6221,"i":"5980113"},{"t":"结构性改革","a":"黄奇帆","r":8.8,"v":6203,"i":"35147504"},{"t":"周四推理俱乐部","a":"理查德·奥斯曼","r":7.2,"v":6127,"i":"35762678"},{"t":"黄油","a":"柚木麻子","r":7.4,"v":6112,"i":"37496215"},{"t":"看不见的中东","a":"姚璐","r":8.5,"v":6064,"i":"37076175"},{"t":"象首迷宮","a":"白井智之","r":7.7,"v":5897,"i":"37422829"},{"t":"编码","a":"Charles Petzold","r":9.3,"v":5876,"i":"4822685"},{"t":"谁来决定吃什么","a":"陈宇慧","r":8.0,"v":5835,"i":"37361375"},{"t":"2010：太空漫游","a":"阿瑟·克拉克","r":9.1,"v":5672,"i":"30471297"},{"t":"想象的共同体","a":"本尼迪克特·安德森","r":8.6,"v":5646,"i":"26810557"},{"t":"安定此心","a":"姜涛","r":8.3,"v":5633,"i":"37502923"},{"t":"斯坦福极简经济学","a":"蒂莫西‧泰勒","r":8.0,"v":5632,"i":"26314063"},{"t":"世界上最简单的会计书","a":"达雷尔·穆利斯","r":9.0,"v":5615,"i":"25747852"},{"t":"牛虻","a":"埃·莉·伏尼契","r":8.9,"v":5614,"i":"6732523"},{"t":"荷马史诗·奥德赛","a":"荷马","r":9.2,"v":5576,"i":"25837854"},{"t":"波峰与波谷","a":"阎步克","r":9.0,"v":5504,"i":"26992823"},{"t":"不拘一格","a":"里德·哈斯廷斯","r":8.1,"v":5495,"i":"35102294"},{"t":"跑外卖","a":"王晚","r":8.2,"v":5474,"i":"37462151"},{"t":"南明史","a":"顾诚","r":9.2,"v":5382,"i":"35771873"},{"t":"我不是潘金莲","a":"刘震云","r":8.7,"v":5381,"i":"36061268"},{"t":"有限与无限的游戏","a":"詹姆斯·卡斯","r":8.0,"v":5357,"i":"33438841"},{"t":"伊加利亚的女儿们","a":"格德·布兰腾伯格","r":9.1,"v":5301,"i":"38192362"},{"t":"近代中国社会的新陈代谢","a":"陈旭麓","r":9.3,"v":5292,"i":"30147582"},{"t":"天色已晚","a":"克莱尔·吉根","r":8.2,"v":5264,"i":"37890167"},{"t":"一个阿富汗女人的来信","a":"哈迪亚·海达里","r":8.0,"v":5118,"i":"37433812"},{"t":"我的骨头没有忘记","a":"斯蒂芬妮·胡","r":8.4,"v":5084,"i":"36986587"},{"t":"血孩子","a":"奥克塔维娅·E.巴特勒","r":8.2,"v":5079,"i":"36985532"},{"t":"图书馆之谜","a":"青崎有吾","r":7.0,"v":5069,"i":"30159888"},{"t":"众神的样子","a":"江逐浪","r":8.7,"v":5067,"i":"34923012"},{"t":"秦二世必须死","a":"马伯庸","r":6.7,"v":5032,"i":"38370177"},{"t":"沧城","a":"阿措","r":8.5,"v":5011,"i":"37212430"},{"t":"如何说孩子才会听，怎么听孩子才肯说","a":"阿黛尔•法伯","r":8.8,"v":4983,"i":"2275635"},{"t":"伊万·伊利奇之死","a":"列夫·托尔斯泰","r":8.9,"v":4977,"i":"36366027"},{"t":"21世纪资本论","a":"托马斯·皮凯蒂","r":8.1,"v":4962,"i":"25947310"},{"t":"超越百岁","a":"彼得 · 阿提亚","r":8.4,"v":4927,"i":"36696538"},{"t":"王二的经济学故事","a":"郭凯","r":8.3,"v":4927,"i":"10733032"},{"t":"征服与革命中的阿拉伯人","a":"尤金·罗根","r":9.3,"v":4899,"i":"33408126"},{"t":"冰菓","a":"米泽穗信","r":7.8,"v":4803,"i":"24383185"},{"t":"我在废土世界扫垃圾","a":"有花在野","r":9.3,"v":4800,"i":"37444272"},{"t":"荷马史诗·伊利亚特","a":"荷马","r":9.4,"v":4781,"i":"25897683"},{"t":"转型中的地方政府","a":"周黎安","r":9.2,"v":4755,"i":"27120243"},{"t":"逻辑哲学论","a":"维特根斯坦","r":9.2,"v":4726,"i":"1005354"},{"t":"痛快的日子","a":"佐野洋子","r":8.2,"v":4666,"i":"35928137"},{"t":"伊甸之东","a":"约翰·斯坦贝克","r":9.0,"v":4652,"i":"36710568"},{"t":"与社会学同游","a":"彼得·L.伯格","r":9.2,"v":4637,"i":"25966785"},{"t":"自伤自恋的精神分析","a":"斋藤环","r":7.8,"v":4633,"i":"36998978"},{"t":"祈祷之海","a":"格雷格·伊根","r":8.6,"v":4551,"i":"36138906"},{"t":"巴菲特致股东的信 (第4版)","a":"沃伦·巴菲特","r":8.9,"v":4514,"i":"30164963"},{"t":"宇宙","a":"卡尔·萨根","r":9.3,"v":4492,"i":"35490038"},{"t":"架空犯","a":"东野圭吾","r":6.7,"v":4478,"i":"37348704"},{"t":"777","a":"伊坂幸太郎","r":8.1,"v":4453,"i":"37271274"},{"t":"意志力","a":"罗伊·鲍迈斯特","r":8.1,"v":4370,"i":"10773358"},{"t":"真事隐","a":"孙立天","r":8.6,"v":4314,"i":"37920184"},{"t":"三国前夜","a":"张向荣","r":8.4,"v":4291,"i":"36699839"},{"t":"白日尽头","a":"燕妮·埃彭贝克","r":8.9,"v":4199,"i":"36537692"},{"t":"富兰克林自传","a":"本杰明·富兰克林","r":8.4,"v":4199,"i":"4007097"},{"t":"私人生活的变革","a":"阎云翔","r":8.5,"v":4156,"i":"26952345"},{"t":"走出戈壁","a":"单伟建","r":9.0,"v":4153,"i":"35520540"},{"t":"山","a":"刘慈欣","r":8.4,"v":4147,"i":"35596032"},{"t":"历史中的大与小","a":"马伯庸","r":7.4,"v":4144,"i":"37869944"},{"t":"是我把你蠢哭了吗","a":"迪安·博内特","r":8.0,"v":4090,"i":"35198304"},{"t":"软件体的生命周期","a":"特德·姜","r":8.7,"v":4069,"i":"26295450"},{"t":"“中间地带”的革命","a":"杨奎松","r":9.0,"v":4059,"i":"4827310"},{"t":"逃不开的经济周期","a":"拉斯·特维德","r":8.3,"v":4043,"i":"20272113"},{"t":"第六病室","a":"安东·巴甫洛维奇·契诃夫","r":9.1,"v":4000,"i":"36919724"},{"t":"抄写员巴托比","a":"赫尔曼·梅尔维尔","r":8.1,"v":3993,"i":"38392174"},{"t":"魏晋南北朝","a":"川胜义雄","r":8.3,"v":3983,"i":"35671921"},{"t":"给忙碌者的天体物理学","a":"尼尔・德格拉斯・泰森","r":8.6,"v":3978,"i":"30246268"},{"t":"煞风景的早间首班车","a":"青崎有吾","r":7.4,"v":3946,"i":"35520726"},{"t":"从一到无穷大","a":"乔治·伽莫夫","r":9.0,"v":3941,"i":"34782541"},{"t":"大道","a":"中信出版集团","r":8.5,"v":3910,"i":"37322503"},{"t":"其中一个是谎言","a":"金爱烂","r":7.1,"v":3877,"i":"38219662"},{"t":"我们生活在南京","a":"天瑞说符","r":7.7,"v":3873,"i":"36126737"},{"t":"阿加莎·克里斯蒂自传","a":"阿加莎·克里斯蒂","r":9.0,"v":3851,"i":"27024106"},{"t":"细说宋朝","a":"虞云国","r":9.0,"v":3813,"i":"33443912"},{"t":"书怎么读都有趣","a":"青山南","r":7.9,"v":3780,"i":"37280733"},{"t":"世界杂货店","a":"罗伯特·谢克里","r":8.6,"v":3747,"i":"33451968"},{"t":"情感勒索","a":"苏珊·福沃德","r":8.1,"v":3672,"i":"30235060"},{"t":"过渡劳动","a":"孙萍","r":8.1,"v":3624,"i":"36985251"},{"t":"无论如何，潜水","a":"河美娜","r":7.9,"v":3620,"i":"38531717"},{"t":"红书","a":"荣格原","r":9.0,"v":3582,"i":"26907984"},{"t":"打开心智","a":"李睿秋","r":8.5,"v":3566,"i":"36089614"},{"t":"共同的底线","a":"秦晖","r":9.0,"v":3528,"i":"21432137"},{"t":"解闷儿","a":"张辰亮","r":8.4,"v":3495,"i":"36864467"},{"t":"小狐狸化形记","a":"扬纸","r":9.4,"v":3481,"i":"37257023"},{"t":"我以为这辈子完蛋了","a":"艾莉·布罗什","r":8.2,"v":3428,"i":"37241704"},{"t":"三生万物","a":"宁高宁","r":8.3,"v":3394,"i":"37013783"},{"t":"科学革命的结构","a":"托马斯·库恩","r":9.0,"v":3376,"i":"20376550"},{"t":"2061：太空漫游","a":"阿瑟·克拉克","r":7.5,"v":3376,"i":"30475763"},{"t":"经济学通识课","a":"尼尔·基什特尼","r":8.3,"v":3366,"i":"27104764"},{"t":"老友、爱人和大麻烦","a":"马修·派瑞","r":7.8,"v":3343,"i":"36502890"},{"t":"被忽视的孩子","a":"乔尼丝·韦布","r":8.4,"v":3334,"i":"30358363"},{"t":"逃避自由","a":"艾里希·弗洛姆","r":9.1,"v":3305,"i":"30297158"},{"t":"远东冰原上的猫头鹰","a":"乔纳森·斯拉特","r":8.8,"v":3267,"i":"36084463"},{"t":"安史之乱","a":"张诗坪","r":9.2,"v":3214,"i":"37118766"},{"t":"权力结构、政治激励和经济增长","a":"章奇","r":9.0,"v":3174,"i":"26762440"},{"t":"秦汉史讲义","a":"秦晖","r":9.2,"v":3108,"i":"37005453"},{"t":"因为独特","a":"李翔","r":8.6,"v":3079,"i":"37105779"},{"t":"黄仁勋：英伟达之芯","a":"斯蒂芬·威特","r":7.2,"v":3062,"i":"37142217"},{"t":"经济学的思维方式","a":"托马斯·索维尔","r":8.4,"v":3041,"i":"30274068"},{"t":"理性乐观派","a":"马特·里德利","r":8.2,"v":3017,"i":"6913343"},{"t":"新异化的诞生","a":"哈特穆特·罗萨","r":8.3,"v":2963,"i":"27204816"},{"t":"落在我身上的雨","a":"陆庆屹","r":9.1,"v":2935,"i":"38461487"},{"t":"看见孩子","a":"贝姬·肯尼迪","r":9.2,"v":2909,"i":"36427596"},{"t":"金花的秘密","a":"荣格","r":8.6,"v":2884,"i":"26849476"},{"t":"人类的故事","a":"亨德里克·威廉·房龙","r":8.4,"v":2876,"i":"1063736"},{"t":"时势","a":"小Lin","r":7.3,"v":2846,"i":"36673627"},{"t":"永劫馆超连续杀人事件","a":"南海游","r":7.3,"v":2845,"i":"37436578"},{"t":"基层中国的运行逻辑","a":"聂辉华","r":7.6,"v":2844,"i":"37663710"},{"t":"见树又见林","a":"艾伦·G.约翰逊","r":8.7,"v":2820,"i":"37030943"},{"t":"给教师的建议","a":"B.A. 苏霍姆林斯基","r":8.9,"v":2818,"i":"1440146"},{"t":"直视骄阳","a":"欧文·亚隆 Irvin D·Yalom","r":8.6,"v":2813,"i":"26660579"},{"t":"网络是怎样连接的","a":"户根勤","r":9.0,"v":2772,"i":"26941639"},{"t":"沈从文的前半生","a":"张新颖","r":8.8,"v":2738,"i":"27622167"},{"t":"收留","a":"克莱尔·吉根","r":8.6,"v":2730,"i":"37835911"},{"t":"自驱型成长","a":"威廉·斯蒂克斯鲁德","r":8.4,"v":2725,"i":"35048510"},{"t":"龙蛋","a":"罗伯特·福沃德","r":8.6,"v":2715,"i":"33395237"},{"t":"文明的冲突","a":"塞缪尔·亨廷顿","r":8.7,"v":2684,"i":"21325858"},{"t":"失去的过去与未来的犯罪","a":"小林泰三","r":7.7,"v":2668,"i":"36593833"},{"t":"希腊别传","a":"陈嘉映","r":8.7,"v":2661,"i":"37096858"},{"t":"深入理解计算机系统 (第3版)","a":"Randal E. Bryant","r":9.7,"v":2651,"i":"26912767"},{"t":"海伯利安四部曲","a":"丹•西蒙斯","r":9.1,"v":2651,"i":"27117515"},{"t":"长安与河北之间","a":"仇鹿鸣","r":9.1,"v":2618,"i":"30386618"},{"t":"现实的社会建构","a":"彼得·伯格","r":9.4,"v":2599,"i":"30421672"},{"t":"战斗细胞","a":"菲利普·德特玛","r":9.0,"v":2560,"i":"36108560"},{"t":"零诺","a":"行烟烟","r":8.7,"v":2544,"i":"38241364"},{"t":"万物发明指南","a":"瑞安·诺思","r":8.5,"v":2540,"i":"34464674"},{"t":"我的几何人生","a":"丘成桐","r":8.3,"v":2495,"i":"35308863"},{"t":"凯罗斯","a":"燕妮·埃彭贝克","r":8.3,"v":2472,"i":"37825000"},{"t":"大厂小民","a":"张小满","r":8.1,"v":2457,"i":"38208793"},{"t":"这就是OKR","a":"约翰·杜尔","r":7.2,"v":2434,"i":"30396635"},{"t":"不平等的童年","a":"安妮特·拉鲁","r":8.7,"v":2416,"i":"27664289"},{"t":"论再生产","a":"路易·阿尔都塞","r":9.5,"v":2373,"i":"34464685"},{"t":"十日终焉·不息","a":"杀虫队队员","r":8.0,"v":2336,"i":"36835658"},{"t":"去依附","a":"董筱丹","r":8.9,"v":2336,"i":"34813128"},{"t":"意识上传中","a":"格雷格·伊根","r":8.2,"v":2307,"i":"36059593"},{"t":"津巴多普通心理学 (第8版)","a":"菲利普·津巴多","r":9.2,"v":2284,"i":"35897952"},{"t":"清代地方政府","a":"瞿同祖","r":9.3,"v":2241,"i":"35713871"},{"t":"毒巧克力命案","a":"安东尼·伯克莱","r":7.0,"v":2233,"i":"37308748"},{"t":"寄生虫星球","a":"卡尔·齐默","r":9.1,"v":2232,"i":"35737216"},{"t":"翠鸟谋杀案","a":"安东尼·霍洛维茨","r":7.8,"v":2229,"i":"38229491"},{"t":"源代码","a":"比尔·盖茨","r":8.7,"v":2228,"i":"37212965"},{"t":"盲视","a":"彼得·沃茨","r":8.4,"v":2202,"i":"35462687"},{"t":"芯片简史","a":"汪波","r":8.8,"v":2195,"i":"36357053"},{"t":"人呐","a":"莫言","r":6.3,"v":2177,"i":"37832794"},{"t":"内在动机","a":"爱德华·L.德西","r":8.0,"v":2163,"i":"35182454"},{"t":"改变心理学的40项研究 (第7版)","a":"罗杰·R.霍克","r":9.1,"v":2160,"i":"30247656"},{"t":"爱的终结","a":"伊娃·易洛思","r":8.7,"v":2155,"i":"36509145"},{"t":"鼓动","a":"叶真中显","r":7.3,"v":2136,"i":"37437772"},{"t":"这世界既残酷也温柔","a":"孙宇晨","r":6.7,"v":2096,"i":"26984629"},{"t":"追寻记忆的痕迹","a":"埃里克·坎德尔","r":9.0,"v":2084,"i":"33429926"},{"t":"我的帝王生涯","a":"苏童","r":7.8,"v":2079,"i":"37050140"},{"t":"海鸥才不管那么多","a":"莱亚·布卢门塔尔","r":7.6,"v":2075,"i":"37350860"},{"t":"常识","a":"托马斯·潘恩","r":8.2,"v":2043,"i":"26371591"},{"t":"鸟投林","a":"智啊威","r":9.6,"v":2032,"i":"38530341"},{"t":"赡养人类","a":"刘慈欣","r":8.2,"v":2024,"i":"36740590"},{"t":"存在与虚无","a":"让·保罗·萨特","r":9.0,"v":2009,"i":"26107897"},{"t":"奥本海默传","a":"凯·伯德","r":8.8,"v":2008,"i":"36483883"},{"t":"小说榫卯","a":"张秋子","r":8.3,"v":2008,"i":"37378639"},{"t":"深度学习入门","a":"[日］斋藤康毅","r":9.6,"v":1984,"i":"30270959"},{"t":"走夜路请放声歌唱","a":"李娟","r":8.0,"v":1972,"i":"37098474"},{"t":"数据密集型应用系统设计","a":"Martin Kleppmann","r":9.6,"v":1947,"i":"30329536"},{"t":"治理中国","a":"李侃如","r":8.6,"v":1913,"i":"4220193"},{"t":"复杂","a":"梅拉妮·米歇尔","r":8.7,"v":1905,"i":"30171338"},{"t":"不消费的一年","a":"凯特•弗兰德斯","r":6.2,"v":1897,"i":"38350993"},{"t":"死亡之前的十五秒","a":"榊林铭","r":7.5,"v":1894,"i":"37444748"},{"t":"克拉克森的农场2","a":"杰里米·克拉克森","r":8.0,"v":1893,"i":"36722710"},{"t":"中国古代简史（第二版）","a":"张帆","r":9.3,"v":1889,"i":"26614948"},{"t":"复杂生命的起源","a":"尼克·莱恩","r":9.2,"v":1851,"i":"35221093"},{"t":"图像","a":"里卡尔多·法尔奇内利","r":9.3,"v":1829,"i":"36330464"},{"t":"七种武器1","a":"古龙","r":8.2,"v":1817,"i":"21778097"},{"t":"亚洲大趋势","a":"乔·史塔威尔","r":9.1,"v":1792,"i":"25893995"},{"t":"十一个时区之旅","a":"雷沙德·卡普希钦斯基","r":8.9,"v":1791,"i":"36914677"},{"t":"历史学与社会理论","a":"彼得·伯克","r":9.2,"v":1787,"i":"34842935"},{"t":"只有偏执狂才能生存","a":"安迪·格鲁夫","r":7.4,"v":1784,"i":"5362909"},{"t":"Project Hail Mary","a":"Andy Weir","r":9.1,"v":1751,"i":"35171006"},{"t":"流言","a":"张爱玲","r":8.8,"v":1713,"i":"35506127"},{"t":"北京法源寺","a":"李敖","r":8.8,"v":1681,"i":"37204500"},{"t":"如何快速了解一个行业","a":"肖璟","r":8.3,"v":1677,"i":"37496051"},{"t":"自我关怀的力量","a":"克里斯廷·内夫","r":8.3,"v":1664,"i":"27101895"},{"t":"鱼什么都知道","a":"乔纳森·巴尔科姆","r":8.4,"v":1649,"i":"30281788"},{"t":"爱的辛劳","a":"斯蒂芬·格罗斯","r":8.3,"v":1647,"i":"38420818"},{"t":"任天堂哲学","a":"井上理","r":7.5,"v":1646,"i":"30234603"},{"t":"空洞的心","a":"加博尔·马泰","r":8.1,"v":1645,"i":"36296679"},{"t":"众神的战争","a":"江逐浪","r":8.7,"v":1631,"i":"35256004"},{"t":"密室偏爱时代的谋杀事件","a":"鸭崎暖炉","r":7.1,"v":1621,"i":"37841158"},{"t":"时间机器","a":"赫伯特·乔治·威尔斯","r":8.1,"v":1599,"i":"30116015"},{"t":"那些古怪又让人忧心的问题","a":"兰道尔·门罗","r":7.9,"v":1597,"i":"35069569"},{"t":"马驹桥的时间","a":"丛瑞安","r":7.5,"v":1570,"i":"38400705"},{"t":"重组与突破","a":"黄奇帆","r":8.5,"v":1560,"i":"36854731"},{"t":"量子物理如何改变世界","a":"卡洛·罗韦利","r":8.8,"v":1549,"i":"36255869"},{"t":"红的自传·丈夫之美","a":"安妮·卡森","r":8.6,"v":1542,"i":"35217665"},{"t":"外套","a":"果戈理","r":8.9,"v":1525,"i":"38392257"},{"t":"月球城市","a":"安迪·威尔","r":7.1,"v":1524,"i":"35049754"},{"t":"手把手教你读财报（新准则升级版）","a":"唐朝","r":8.9,"v":1521,"i":"35299355"},{"t":"爱、金钱和孩子","a":"马赛厄斯·德普克","r":8.0,"v":1515,"i":"33462451"},{"t":"对工作说不","a":"大卫·弗雷恩","r":8.6,"v":1506,"i":"37194302"},{"t":"宇宙的琴弦","a":"布赖恩·格林","r":9.0,"v":1497,"i":"30134674"},{"t":"宏观经济学二十五讲","a":"徐高","r":9.6,"v":1484,"i":"30468563"},{"t":"中国美学十五讲","a":"朱良志","r":8.5,"v":1482,"i":"1799770"},{"t":"我是因为高兴才娶你","a":"娜塔莉亚·金兹伯格","r":7.8,"v":1472,"i":"37662621"},{"t":"为父则刚","a":"杨雨坤","r":8.9,"v":1471,"i":"38491107"},{"t":"格鲁夫给经理人的第一课","a":"安迪·格鲁夫","r":8.9,"v":1471,"i":"27178870"},{"t":"去家访","a":"黄灯","r":7.9,"v":1461,"i":"36698410"},{"t":"习惯的力量","a":"查尔斯·都希格","r":8.3,"v":1454,"i":"27045616"},{"t":"绍宋","a":"榴弹怕水","r":8.3,"v":1450,"i":"36955267"},{"t":"孟子","a":"孟子","r":9.0,"v":1446,"i":"4917252"},{"t":"哈萨比斯：谷歌AI之脑","a":"塞巴斯蒂安·马拉比","r":8.7,"v":1445,"i":"38357884"},{"t":"接触","a":"卡尔·萨根","r":8.5,"v":1432,"i":"35701052"},{"t":"地雷格力高","a":"青崎有吾","r":7.6,"v":1417,"i":"37938902"},{"t":"巷里林泉","a":"杨云苏","r":8.4,"v":1413,"i":"37026917"},{"t":"苏格拉底的申辩","a":"柏拉图","r":9.3,"v":1413,"i":"26934202"},{"t":"漂亮朋友","a":"莫泊桑","r":8.7,"v":1410,"i":"35923044"},{"t":"大脑的故事","a":"大卫·伊格曼","r":8.4,"v":1399,"i":"33383607"},{"t":"英伟达之道","a":"［美］金泰","r":7.7,"v":1388,"i":"37138107"},{"t":"杀戮的双曲线","a":"西村京太郎","r":7.8,"v":1364,"i":"37344863"},{"t":"卓有成效的管理者（55周年新译本）","a":"彼得·德鲁克","r":9.0,"v":1351,"i":"35863276"},{"t":"另一个国度","a":"杨潇","r":8.8,"v":1330,"i":"38447083"},{"t":"经济运行的逻辑","a":"高善文","r":8.1,"v":1323,"i":"24696672"},{"t":"AI 3.0","a":"梅拉妮·米歇尔","r":8.3,"v":1313,"i":"35351678"},{"t":"克拉克森的农场3","a":"杰里米·克拉克森","r":8.0,"v":1276,"i":"36848929"},{"t":"隐蔽嫌疑人","a":"陈浩基","r":7.7,"v":1270,"i":"37147122"},{"t":"你看起来好像很好吃","a":"宫西达也","r":9.1,"v":1268,"i":"3614177"},{"t":"寻找王者","a":"法月纶太郎","r":7.4,"v":1267,"i":"37364917"},{"t":"战略与路径","a":"黄奇帆","r":8.4,"v":1262,"i":"36139006"},{"t":"流畅的Python","a":"Luciano Ramalho","r":9.4,"v":1262,"i":"27028517"},{"t":"生命是什么","a":"埃尔温·薛定谔","r":9.0,"v":1259,"i":"30278178"},{"t":"神曲","a":"但丁","r":9.2,"v":1251,"i":"35390580"},{"t":"品味与阶层","a":"蒂菲娜·里维埃尔","r":8.6,"v":1246,"i":"37491978"},{"t":"深度关系","a":"大卫·布拉德福德","r":8.4,"v":1245,"i":"36336313"},{"t":"创意行为","a":"里克·鲁宾","r":8.2,"v":1244,"i":"36897065"},{"t":"冲向火星","a":"艾瑞克·伯格","r":8.6,"v":1236,"i":"36429009"},{"t":"米德尔马契","a":"乔治·艾略特","r":9.1,"v":1234,"i":"37491358"},{"t":"当代政治哲学","a":"威尔·金里卡","r":9.5,"v":1234,"i":"26389495"},{"t":"艺术与错觉","a":"E.H.贡布里希","r":9.0,"v":1233,"i":"10559288"},{"t":"局部：伟大的工匠","a":"陈丹青","r":9.1,"v":1232,"i":"35216533"},{"t":"心态制胜","a":"W.提摩西·加尔韦","r":8.5,"v":1223,"i":"37124066"},{"t":"张居正","a":"熊召政","r":8.6,"v":1223,"i":"34955795"},{"t":"长书当诉","a":"戴安娜·阿西尔","r":7.8,"v":1215,"i":"37384090"},{"t":"花落了","a":"韩云","r":8.2,"v":1213,"i":"37523867"},{"t":"伊藤润二的漫画术","a":"伊藤润二","r":8.1,"v":1202,"i":"36919549"},{"t":"不被支配","a":"沙希达·艾拉比","r":8.3,"v":1201,"i":"36923814"},{"t":"三体前传：球状闪电","a":"刘慈欣","r":8.5,"v":1196,"i":"36909527"},{"t":"控制论与科学方法论","a":"金观涛","r":8.9,"v":1177,"i":"37235927"},{"t":"明智恭介的疑案","a":"今村昌弘","r":7.0,"v":1172,"i":"37367264"},{"t":"恐龙的移动轨迹","a":"金和珍","r":7.9,"v":1168,"i":"38591875"},{"t":"从昨日醒来","a":"帕蒂·史密斯","r":8.0,"v":1168,"i":"36553455"},{"t":"区分","a":"皮埃尔·布尔迪厄","r":7.6,"v":1161,"i":"26354330"},{"t":"少年发声","a":"陈瑜","r":8.7,"v":1154,"i":"35517028"},{"t":"如何阅读一棵树","a":"特里斯坦·古利","r":8.6,"v":1142,"i":"37129165"},{"t":"上瘾谜题","a":"白井智之","r":6.6,"v":1133,"i":"37367692"},{"t":"三体·死神永生","a":"刘慈欣","r":9.1,"v":1128,"i":"35870667"},{"t":"中国绘画中的“女性空间”","a":"巫鸿","r":8.5,"v":1120,"i":"30260377"},{"t":"编译原理","a":"Alfred V. Aho","r":9.0,"v":1107,"i":"3296317"},{"t":"操作系统导论","a":"Remzi H. Arpaci-Dusseau","r":9.4,"v":1102,"i":"33463930"},{"t":"装台","a":"陈彦","r":7.6,"v":1096,"i":"35107892"},{"t":"暮日耀光","a":"韦庆远","r":9.1,"v":1060,"i":"36657004"},{"t":"空间的敦煌","a":"巫鸿","r":8.8,"v":1059,"i":"35694442"},{"t":"每个人的经济学","a":"张夏准","r":8.5,"v":1029,"i":"35152152"},{"t":"啸风山庄","a":"艾米莉·勃朗特","r":9.1,"v":1019,"i":"38568894"},{"t":"“空间”的美术史","a":"巫鸿","r":9.0,"v":1009,"i":"27064108"},{"t":"老人与海","a":"欧内斯特·海明威","r":9.0,"v":999,"i":"35781153"},{"t":"失乐园","a":"约翰·弥尔顿","r":8.5,"v":998,"i":"30459964"},{"t":"智能简史","a":"麦克斯·班尼特","r":9.1,"v":995,"i":"37252220"},{"t":"周易译注","a":"黄寿祺","r":9.3,"v":982,"i":"2115906"},{"t":"不生锈的人生","a":"石井哲代","r":7.9,"v":981,"i":"37297614"},{"t":"信息传","a":"吴军","r":8.4,"v":978,"i":"35223179"},{"t":"第二枪","a":"安东尼·伯克莱","r":7.4,"v":976,"i":"38248084"},{"t":"非此即彼（上卷）","a":"克尔凯郭尔","r":8.9,"v":972,"i":"3987027"},{"t":"罐头厂街","a":"约翰·斯坦贝克","r":8.6,"v":953,"i":"37889502"},{"t":"统治与教育","a":"徐贲","r":9.1,"v":945,"i":"26675905"},{"t":"恐龙的兴衰","a":"史蒂夫·布鲁萨特","r":8.9,"v":940,"i":"35081676"},{"t":"珍珠","a":"约翰·斯坦贝克","r":8.5,"v":928,"i":"38394123"},{"t":"傍晚的邂逅","a":"朴婉绪","r":8.5,"v":926,"i":"37832891"},{"t":"关键跃升","a":"刘润","r":8.0,"v":918,"i":"36946907"},{"t":"理解人体形态","a":"米歇尔·洛里切拉","r":9.3,"v":916,"i":"27182216"},{"t":"献给麦卡托与美袋的谋杀","a":"麻耶雄嵩","r":7.0,"v":911,"i":"37336938"},{"t":"國家為什麼會失敗","a":"戴倫·艾塞默魯","r":8.4,"v":908,"i":"37321384"},{"t":"恐惧","a":"斯蒂芬·茨威格","r":8.6,"v":905,"i":"38510363"},{"t":"光与线","a":"韩江","r":7.1,"v":905,"i":"38219665"},{"t":"荣格心理学入门","a":"河合隼雄","r":8.9,"v":897,"i":"35130973"},{"t":"灰姑娘谜局","a":"塘璜","r":8.1,"v":891,"i":"38190206"},{"t":"母语之外的旅行","a":"多和田叶子","r":8.3,"v":889,"i":"37241713"},{"t":"契诃夫短篇小说精选","a":"契诃夫","r":9.1,"v":868,"i":"33417103"},{"t":"了不起的盖茨比","a":"菲茨杰拉德","r":8.9,"v":866,"i":"37462119"},{"t":"湖畔","a":"东野圭吾","r":7.0,"v":864,"i":"37031166"},{"t":"手术刀下的历史","a":"阿诺德·范德拉尔","r":8.1,"v":862,"i":"35069568"},{"t":"焦虑的一代","a":"乔纳森·海特","r":7.5,"v":861,"i":"37271557"},{"t":"偶遇","a":"巫鸿","r":8.4,"v":861,"i":"36934942"},{"t":"明代国家权力结构及运行机制","a":"方志远","r":9.1,"v":853,"i":"36594961"},{"t":"做对“懒”爸妈 养出省心娃","a":"沈奕斐","r":8.7,"v":844,"i":"34952677"},{"t":"万物原理","a":"弗兰克·维尔切克","r":8.2,"v":839,"i":"35652800"},{"t":"经营未来","a":"李明博","r":7.7,"v":838,"i":"3225507"},{"t":"易经杂说","a":"南怀瑾","r":8.7,"v":820,"i":"27143822"},{"t":"金钱心理学","a":"摩根·豪泽尔","r":8.4,"v":820,"i":"38175889"},{"t":"中国居民膳食指南（2022）","a":"中国营养学会","r":8.4,"v":805,"i":"35885945"},{"t":"第一性原理","a":"马库斯·乔恩","r":7.6,"v":803,"i":"36890781"},{"t":"数学女孩","a":"结城浩","r":8.8,"v":798,"i":"26677354"},{"t":"时运变迁","a":"保罗·沃尔克","r":8.2,"v":798,"i":"26894273"},{"t":"人体简史（全彩插图版）","a":"比尔·布莱森","r":9.0,"v":797,"i":"36414455"},{"t":"创新者的窘境","a":"克莱顿·克里斯坦森","r":8.9,"v":782,"i":"35148452"},{"t":"好猫八不","a":"王朔","r":7.8,"v":775,"i":"38192710"},{"t":"Python编程 ：从入门到实践(第3版)","a":"埃里克 • 马瑟斯","r":9.2,"v":749,"i":"36365320"},{"t":"朱砂掌","a":"郑执","r":7.4,"v":738,"i":"37407955"},{"t":"逐鹿","a":"张诗坪","r":8.7,"v":732,"i":"38392887"},{"t":"人格心理学(第八版)","a":"Jerry M·Burger","r":9.1,"v":729,"i":"26004131"},{"t":"自然权利与历史","a":"列奥·施特劳斯","r":9.4,"v":713,"i":"26874890"},{"t":"儒林外史","a":"吴敬梓","r":9.1,"v":704,"i":"35002408"},{"t":"我们如何理解这个世界","a":"齐格蒙特·鲍曼","r":8.7,"v":695,"i":"37930972"},{"t":"跨界学习","a":"王烁","r":7.3,"v":694,"i":"33376035"},{"t":"发展心理学","a":"罗伯特·费尔德曼","r":9.1,"v":690,"i":"25726681"},{"t":"朱鎔基傳","a":"龍安志","r":7.8,"v":678,"i":"10472587"},{"t":"当代中国政府与政治 (第二版)","a":"景跃进","r":9.2,"v":675,"i":"36939802"},{"t":"我们时代的神经与精神疾病","a":"埃里克·坎德尔","r":8.7,"v":671,"i":"36930293"},{"t":"动机心理学","a":"Melissa Burkley","r":8.8,"v":668,"i":"35012449"},{"t":"MySQL是怎样运行的","a":"小孩子4919","r":9.4,"v":666,"i":"35231266"},{"t":"新收入","a":"钱婧","r":7.4,"v":655,"i":"37517594"},{"t":"异类","a":"马尔科姆·格拉德威尔","r":7.8,"v":654,"i":"35178861"},{"t":"西塔","a":"宋念申","r":8.6,"v":639,"i":"38067357"},{"t":"白雪猪头","a":"苏童","r":8.1,"v":634,"i":"38188690"},{"t":"人生财富靠康波","a":"周金涛","r":8.1,"v":632,"i":"37128565"},{"t":"活着，还活着呢！","a":"戴安娜·阿西尔","r":8.0,"v":630,"i":"38422113"},{"t":"妩媚的忠臣","a":"赵帅淇","r":7.8,"v":614,"i":"38495090"},{"t":"重新理解企业家精神","a":"张维迎","r":8.3,"v":610,"i":"35943527"},{"t":"我和我生活过的地方","a":"吉本芭娜娜","r":7.3,"v":598,"i":"38520059"},{"t":"金錢風雲","a":"單偉建","r":9.2,"v":597,"i":"37082092"},{"t":"炎症","a":"希尔帕·拉维拉","r":7.6,"v":593,"i":"37106840"},{"t":"漫步华尔街 (第13版)","a":"伯顿·G.马尔基尔","r":8.4,"v":590,"i":"37220253"},{"t":"国家为什么会破产","a":"瑞·达利欧","r":8.5,"v":585,"i":"37370552"},{"t":"笛卡尔的错误","a":"安东尼奥·R.达马西奥","r":8.2,"v":583,"i":"2157346"},{"t":"荷马史诗","a":"荷马","r":9.2,"v":581,"i":"35728879"},{"t":"记忆旅行者","a":"布莱克·克劳奇","r":7.8,"v":577,"i":"35789345"},{"t":"中国艺术精神","a":"徐复观","r":9.0,"v":572,"i":"6004595"},{"t":"偏跟山过不去","a":"比尔·布莱森","r":8.1,"v":564,"i":"33417188"},{"t":"大自然的社交网络","a":"彼得·渥雷本","r":8.3,"v":560,"i":"30126940"},{"t":"黑石的选择","a":"彼得·彼得森","r":7.6,"v":555,"i":"30265847"},{"t":"宇宙奥德赛：穿越银河系","a":"王爽","r":9.0,"v":547,"i":"34862623"},{"t":"張忠謀自傳（下冊）","a":"張忠謀","r":9.2,"v":543,"i":"37109592"},{"t":"暗淡蓝点","a":"卡尔•萨根","r":8.7,"v":542,"i":"36895582"},{"t":"吸引力法则","a":"埃斯特·希克斯","r":8.0,"v":541,"i":"36894917"},{"t":"中国式家庭","a":"陈海贤","r":7.9,"v":538,"i":"38438331"},{"t":"求索中国","a":"萧冬连","r":9.2,"v":534,"i":"2022118"},{"t":"习得性无助","a":"马丁·塞利格曼","r":8.7,"v":531,"i":"35128278"},{"t":"灵魂的风景","a":"沃纳·赫尔佐格","r":8.8,"v":530,"i":"37474304"},{"t":"当代前沿社会理论十讲","a":"郑作彧","r":9.4,"v":527,"i":"37261651"},{"t":"薄暮时分","a":"吴心越","r":8.7,"v":525,"i":"38176715"},{"t":"工商巨子","a":"荣·切尔诺","r":9.0,"v":508,"i":"1006203"},{"t":"照亮破碎之心","a":"卡尔·戴瑟罗思","r":7.9,"v":506,"i":"36727756"},{"t":"行为投资学手册","a":"詹姆斯·蒙蒂尔","r":7.6,"v":506,"i":"26935601"},{"t":"小顾聊绘画·壹","a":"顾爷","r":7.4,"v":502,"i":"36028817"},{"t":"花朵与探险","a":"玛丽安娜·诺斯","r":9.4,"v":497,"i":"36073010"},{"t":"赞美闲散","a":"伯特兰·罗素","r":7.7,"v":492,"i":"37505237"},{"t":"第二天：金钱进化论","a":"方言","r":6.7,"v":489,"i":"38417876"},{"t":"大学的精神","a":"蒲实","r":8.5,"v":487,"i":"26953257"},{"t":"控制论","a":"维纳","r":9.2,"v":485,"i":"2356843"},{"t":"法兰克福学派入门讲座","a":"吉莉恩·罗斯","r":8.3,"v":480,"i":"37563197"},{"t":"任意车站","a":"靓灵","r":8.7,"v":479,"i":"37385290"},{"t":"继女","a":"卡罗琳·布莱克伍德","r":8.1,"v":475,"i":"38431429"},{"t":"中国菜市场","a":"钟淑如","r":8.2,"v":473,"i":"38425442"},{"t":"我住长江尾","a":"段志强","r":8.8,"v":465,"i":"38590318"},{"t":"超级沟通者","a":"查尔斯·都希格","r":7.9,"v":463,"i":"37118116"},{"t":"地下王朝","a":"古猫 丨陪你去看博物馆","r":8.1,"v":451,"i":"37923431"},{"t":"费曼物理学讲义","a":"理查德·费曼","r":9.5,"v":449,"i":"34984198"},{"t":"三探一案","a":"利奥·布鲁斯","r":7.4,"v":448,"i":"38233833"},{"t":"幸福的陷阱 (第2版)","a":"路斯·哈里斯","r":8.4,"v":443,"i":"36624175"},{"t":"计算机组成与设计（原书第5版）","a":"戴维 A.帕特森","r":9.2,"v":443,"i":"26604008"},{"t":"画语录","a":"徐小虎","r":8.9,"v":438,"i":"35709198"},{"t":"戏外之戏","a":"吴存存","r":8.8,"v":431,"i":"38196503"},{"t":"甲午","a":"沙青青","r":8.4,"v":421,"i":"38410337"},{"t":"估值原理","a":"周洛华","r":8.5,"v":420,"i":"35947137"},{"t":"列宁主义","a":"尼尔·哈丁","r":8.6,"v":420,"i":"25964041"},{"t":"穿墙透壁","a":"李乾朗","r":9.5,"v":416,"i":"37173809"},{"t":"灵感迸发的每一天","a":"汤浅政明","r":7.6,"v":415,"i":"37141966"},{"t":"常变与长青","a":"郭平","r":8.2,"v":410,"i":"36864762"},{"t":"费曼讲物理：入门","a":"理查德·费曼","r":8.6,"v":401,"i":"33457293"},{"t":"团队协作的五大障碍（20周年纪念版）","a":"帕特里克·兰西奥尼","r":8.4,"v":401,"i":"35923107"},{"t":"数学觉醒","a":"戴维·贝西","r":8.0,"v":397,"i":"38368705"},{"t":"若非，冬季","a":"安妮·卡森","r":7.9,"v":393,"i":"37488715"},{"t":"汇编语言 (第4版）","a":"王爽","r":9.7,"v":393,"i":"35038473"},{"t":"马斯克原理","a":"埃里克·乔根森","r":8.2,"v":392,"i":"38446077"},{"t":"金陵风雨图","a":"何慕","r":8.1,"v":388,"i":"37525507"},{"t":"萦绕不安的自我","a":"夏安诺","r":9.3,"v":388,"i":"35238408"},{"t":"蛮与痴","a":"郑恩柏","r":8.2,"v":386,"i":"37152439"},{"t":"知行","a":"刘建国","r":9.3,"v":386,"i":"33463986"},{"t":"安岳","a":"王南","r":8.8,"v":381,"i":"37184166"},{"t":"为什么10倍增长比2倍更容易","a":"丹.苏利文 Dan Sullivan","r":7.8,"v":381,"i":"37657692"},{"t":"这是你的船","a":"迈克尔·阿伯拉肖夫","r":8.3,"v":377,"i":"6512297"},{"t":"活水","a":"罗伯特·麦克法伦","r":9.1,"v":372,"i":"38495054"},{"t":"中国绘画","a":"巫鸿","r":9.2,"v":372,"i":"37156716"},{"t":"一部未写的小说","a":"弗吉尼亚·伍尔夫","r":9.1,"v":365,"i":"38479348"},{"t":"秋水堂论金瓶梅（插图袖珍本）","a":"田晓菲","r":9.1,"v":364,"i":"37109350"},{"t":"肉与灵","a":"洛伊克·华康德","r":8.3,"v":363,"i":"38446626"},{"t":"杨小凯谈经济","a":"杨小凯","r":9.1,"v":362,"i":"1074525"},{"t":"少年厌学","a":"陈瑜","r":7.9,"v":361,"i":"37187366"},{"t":"水的密码","a":"特里斯坦·古利","r":8.8,"v":360,"i":"33477390"},{"t":"AI未来已来","a":"李开复","r":7.1,"v":360,"i":"38559981"},{"t":"创新者的任务","a":"克莱顿·克里斯坦森","r":8.5,"v":358,"i":"30443496"},{"t":"重负与恩典","a":"西蒙娜·薇依","r":8.9,"v":355,"i":"37479747"},{"t":"最蓝的眼睛","a":"托妮·莫里森","r":9.0,"v":353,"i":"38546670"},{"t":"脑中魅影","a":"V. S. 拉马钱德兰","r":8.9,"v":351,"i":"30171324"},{"t":"人工智能现代方法（第4版）","a":"Stuart Russell","r":9.1,"v":350,"i":"36152133"},{"t":"大脑喜欢这样学","a":"黄翔","r":8.1,"v":350,"i":"37058423"},{"t":"纸路","a":"穆尔克","r":8.6,"v":348,"i":"38426352"},{"t":"爱是搬起一块重石而不知缘故","a":"珍妮特·温特森","r":7.2,"v":335,"i":"38490467"},{"t":"魔山","a":"托马斯·曼","r":8.7,"v":333,"i":"37445809"},{"t":"主场","a":"夏鹏","r":7.3,"v":332,"i":"37359638"},{"t":"如此打工30年","a":"占有兵","r":7.5,"v":329,"i":"37338147"},{"t":"無權勢者的力量","a":"哈維爾","r":9.5,"v":328,"i":"35487434"},{"t":"无人观看","a":"刘天昭","r":8.2,"v":323,"i":"38591073"},{"t":"欢喜皇帝","a":"王鸥行","r":7.6,"v":322,"i":"38531076"},{"t":"科技共和国","a":"亚历山大·卡普","r":6.9,"v":318,"i":"37491983"},{"t":"转空山","a":"王陌书","r":8.3,"v":316,"i":"37545835"},{"t":"给我40岁的女儿","a":"韩星姬","r":7.4,"v":316,"i":"38602675"},{"t":"菌络万象","a":"［英］默林・谢尔德雷克","r":8.8,"v":313,"i":"37088268"},{"t":"主唱死了","a":"刘书宇","r":7.7,"v":312,"i":"37809070"},{"t":"领域驱动设计","a":"埃文斯","r":9.1,"v":312,"i":"5344973"},{"t":"河流上的黄昏","a":"李颖","r":8.5,"v":311,"i":"38591845"},{"t":"我的风暴，我的庇护所","a":"阿兰达蒂·洛伊","r":9.3,"v":310,"i":"38901091"},{"t":"写信人","a":"弗吉尼亚·埃文斯","r":8.9,"v":310,"i":"38489157"},{"t":"古代中世纪哲学十五讲","a":"吴天岳","r":9.1,"v":309,"i":"36255857"},{"t":"卓越基因","a":"吉姆·柯林斯","r":8.5,"v":309,"i":"35888789"},{"t":"伯克毕生发展心理学（第7版）","a":"劳拉·E.伯克","r":9.3,"v":308,"i":"35623788"},{"t":"混沌","a":"［美］詹姆斯·格雷克","r":8.3,"v":304,"i":"35595861"},{"t":"东德童话","a":"燕妮·埃彭贝克","r":8.2,"v":300,"i":"38622753"},{"t":"陀思妥耶夫斯基：灵魂的审问者","a":"尚塔尔·范登赫费尔","r":8.5,"v":300,"i":"38380878"},{"t":"艾伦·图灵传","a":"安德鲁·霍奇斯","r":8.3,"v":298,"i":"27104158"},{"t":"宇宙的最后三分钟","a":"保罗·戴维斯","r":7.6,"v":297,"i":"35131845"},{"t":"九九失真","a":"刘勃","r":7.6,"v":297,"i":"37923423"},{"t":"万王之王","a":"雷沙德·卡普希钦斯基","r":9.0,"v":295,"i":"38574975"},{"t":"权力与市场","a":"穆雷·罗斯巴德","r":8.7,"v":295,"i":"2155344"},{"t":"好的家庭教育","a":"李笑来","r":7.5,"v":294,"i":"38204411"},{"t":"微积分和数学分析引论（第一卷）","a":"Richard Courant","r":9.4,"v":293,"i":"1281343"},{"t":"x86汇编语言","a":"李忠","r":9.3,"v":293,"i":"20492528"},{"t":"本质之书","a":"穆罕默德·姆布加尔·萨尔","r":8.5,"v":292,"i":"38488531"},{"t":"树上南方","a":"陈思呈","r":8.8,"v":290,"i":"38503798"},{"t":"坪效之王","a":"乔·库隆布","r":8.0,"v":288,"i":"36994796"},{"t":"冬之喜剧","a":"陆秋槎","r":6.9,"v":285,"i":"38436544"},{"t":"关于建国以来党的若干历史问题的决议注释本","a":"中共中央文献研究室","r":9.2,"v":283,"i":"30129748"},{"t":"留白","a":"程乐松","r":7.8,"v":281,"i":"38612957"},{"t":"物质是什么","a":"吉姆·巴戈特","r":9.1,"v":281,"i":"35009802"},{"t":"Python机器学习基础教程","a":"安德里亚斯·穆勒","r":8.9,"v":281,"i":"30147778"},{"t":"别闹了，这是艺术！","a":"顾爷","r":7.5,"v":279,"i":"37663077"},{"t":"正道","a":"冯唐","r":7.0,"v":276,"i":"37264996"},{"t":"缠斗","a":"翟东升","r":8.4,"v":274,"i":"38409776"},{"t":"软件架构设计","a":"余春龙","r":8.9,"v":272,"i":"30443578"},{"t":"奥德赛","a":"荷马","r":8.0,"v":268,"i":"36240069"},{"t":"马奇论管理","a":"詹姆斯·马奇","r":9.0,"v":268,"i":"5920725"},{"t":"大学，有什么用？","a":"斯蒂芬·科利尼","r":8.0,"v":268,"i":"36361942"},{"t":"我，不完美博主","a":"洛怀","r":8.0,"v":266,"i":"38594942"},{"t":"我们在四维空间可以做什么","a":"［澳］马特·帕克","r":8.4,"v":264,"i":"33503403"},{"t":"宛如泰坦尼克","a":"杰西卡·欣德曼","r":8.3,"v":262,"i":"38548421"},{"t":"众神的软肋","a":"江逐浪","r":8.4,"v":262,"i":"35745132"},{"t":"计算的本质","a":"Tom Stuart","r":8.8,"v":262,"i":"26148763"},{"t":"利息理论","a":"欧文·费雪","r":9.4,"v":261,"i":"24878119"},{"t":"分拣人生","a":"牛童","r":8.2,"v":260,"i":"38593473"},{"t":"世界小史","a":"恩斯特·贡布里希","r":8.6,"v":259,"i":"38415613"},{"t":"符水与盘尼西林","a":"吴晓璐","r":5.8,"v":259,"i":"38575033"},{"t":"逻辑的引擎","a":"马丁•戴维斯","r":8.1,"v":256,"i":"30171335"},{"t":"论领导力","a":"亨利·基辛格","r":8.7,"v":255,"i":"36811251"},{"t":"兰花与蒲公英","a":"托马斯·博伊斯","r":8.1,"v":254,"i":"35374301"},{"t":"空地","a":"李颖迪","r":8.3,"v":251,"i":"38613720"},{"t":"植物生命","a":"埃马努埃莱·科恰","r":8.4,"v":251,"i":"37417650"},{"t":"计算机系统概论","a":"Yale N. Patt","r":9.2,"v":251,"i":"2185076"},{"t":"与青春期和解","a":"劳伦斯·斯坦伯格","r":8.5,"v":251,"i":"34618237"},{"t":"佩索阿：最后的时光","a":"尼古拉·巴拉尔 绘","r":8.2,"v":243,"i":"38380879"},{"t":"Python编程快速上手 (第2版)","a":"Al Sweigart","r":8.8,"v":242,"i":"35387685"},{"t":"裂隙之境","a":"弗兰克·蒂利耶","r":7.8,"v":240,"i":"38490850"},{"t":"浮生明灭","a":"周琳","r":8.0,"v":236,"i":"38188679"},{"t":"The Odyssey","a":"Homer","r":9.2,"v":233,"i":"30360112"},{"t":"永明乐","a":"林晓光","r":8.4,"v":233,"i":"36872337"},{"t":"边界","a":"约瑟夫·阮","r":6.9,"v":231,"i":"37309693"},{"t":"蛰居族","a":"斋藤环","r":7.5,"v":230,"i":"38193313"},{"t":"软技能 (第2版)","a":"John Z. Sonmez","r":8.1,"v":228,"i":"36044253"},{"t":"超越分数","a":"沈辛成","r":8.4,"v":227,"i":"38508980"},{"t":"死亡否认","a":"欧内斯特·贝克尔","r":8.8,"v":226,"i":"37940374"},{"t":"数学指南","a":"Eberhard Zeidler","r":9.5,"v":225,"i":"7061949"},{"t":"法国大革命新史","a":"杰里米·D. 波普金","r":4.9,"v":223,"i":"38459361"},{"t":"自信的陷阱","a":"路斯·哈里斯","r":8.7,"v":223,"i":"37101595"},{"t":"公司理财 (精要版·第12版)","a":"斯蒂芬·A.罗斯","r":9.5,"v":221,"i":"35077117"},{"t":"当代中国的中央地方关系","a":"周飞舟","r":8.7,"v":221,"i":"36500923"},{"t":"哈里发和阿萨辛","a":"［德］海因茨·哈尔姆","r":8.3,"v":220,"i":"38446620"},{"t":"改变艺术的31种凝视","a":"威尔·贡培兹","r":7.9,"v":220,"i":"37151929"},{"t":"不焦虑父母俱乐部","a":"郝景芳","r":7.5,"v":217,"i":"36164075"},{"t":"偶像","a":"帕特里克·W. 加尔布雷思","r":8.1,"v":213,"i":"38564356"},{"t":"可爱的物理","a":"田中幸","r":8.2,"v":212,"i":"37159602"},{"t":"河西走廊","a":"胡成","r":7.1,"v":210,"i":"38488756"},{"t":"切·格瓦拉","a":"乔恩·李·安德森","r":8.8,"v":209,"i":"38213825"},{"t":"缓慢生长","a":"倪虹洁","r":7.3,"v":207,"i":"38480605"},{"t":"有毒的人","a":"利安娜·坦恩·布林克","r":6.9,"v":206,"i":"38226723"},{"t":"逃离人海","a":"小川糸","r":7.1,"v":206,"i":"38479844"},{"t":"大厂病","a":"席凡君","r":6.2,"v":206,"i":"38406128"},{"t":"观念生物学","a":"马伦·霍格兰","r":9.1,"v":204,"i":"35067533"},{"t":"为了自由呼吸的教育","a":"李希贵","r":8.8,"v":204,"i":"27174459"},{"t":"Artificial Intelligence","a":"Stuart Russell","r":9.2,"v":203,"i":"3307202"},{"t":"软件设计的哲学","a":"约翰·奥斯特豪特","r":9.0,"v":202,"i":"37119755"},{"t":"离散","a":"格雷格·伊根","r":8.3,"v":199,"i":"37271271"},{"t":"柏拉图与技术呆子","a":"爱德华·阿什福德·李","r":8.5,"v":198,"i":"34971151"},{"t":"企业迷思","a":"宋志平","r":8.5,"v":198,"i":"34955415"},{"t":"诗与政治","a":"姜进","r":8.3,"v":196,"i":"38191517"},{"t":"技术革命与金融资本","a":"卡洛塔·佩雷斯","r":7.4,"v":195,"i":"37932546"},{"t":"裂周","a":"罗三洋","r":7.7,"v":192,"i":"38434722"},{"t":"生命密码4","a":"尹烨","r":9.7,"v":192,"i":"38607042"},{"t":"意识的解释","a":"丹尼尔·丹尼特","r":7.9,"v":192,"i":"35972519"},{"t":"只有狗狗知道","a":"艾莉森·弗兰德","r":9.3,"v":192,"i":"38462631"},{"t":"谁杀了武大郎？","a":"时晨","r":7.8,"v":190,"i":"38552192"},{"t":"挑战者号的悲歌","a":"亚当·希金博特姆","r":8.9,"v":189,"i":"38463057"},{"t":"见海之地","a":"贝客邦","r":6.8,"v":189,"i":"38530533"},{"t":"海昏疑云","a":"易中天","r":6.7,"v":187,"i":"38672184"},{"t":"万物源起","a":"金宝英","r":7.8,"v":186,"i":"38219552"},{"t":"深渊大饭店","a":"斯图尔特·杰弗里斯","r":9.0,"v":185,"i":"38552885"},{"t":"进击的病毒","a":"史钧","r":8.7,"v":185,"i":"35701145"},{"t":"向解放军学习","a":"张建华","r":6.9,"v":185,"i":"1253130"},{"t":"大宋悬疑录","a":"记无忌","r":9.0,"v":184,"i":"37244351"},{"t":"面包的环球之旅","a":"玛丽亚·巴哈雷娃","r":8.2,"v":183,"i":"38395317"},{"t":"经济学的邀请","a":"雅尼斯·瓦鲁法克斯","r":9.0,"v":181,"i":"26637768"},{"t":"勇气呼唤勇气","a":"珍妮特·温特森","r":8.5,"v":181,"i":"38381390"},{"t":"我所相信的生活","a":"伯特兰·罗素","r":7.6,"v":181,"i":"38408805"},{"t":"智能","a":"曾鸣","r":8.2,"v":181,"i":"38553944"},{"t":"堤","a":"克里斯·马克","r":8.8,"v":178,"i":"38521982"},{"t":"C语言程序设计：现代方法（第2版•修订版）","a":"K.N.金","r":9.6,"v":178,"i":"35503091"},{"t":"功能医学","a":"〔美〕杰弗里·S.布兰德","r":7.8,"v":177,"i":"38361141"},{"t":"法槌轻落","a":"弗兰克·卡普里奥","r":8.1,"v":177,"i":"38572590"},{"t":"卡夫卡传","a":"莱纳·施塔赫","r":9.4,"v":177,"i":"37648005"},{"t":"物种之眼","a":"苗德岁","r":9.3,"v":177,"i":"37892473"},{"t":"工资的真相","a":"杰克·罗森菲尔德","r":8.1,"v":177,"i":"37669531"},{"t":"计算广告 (第3版)","a":"刘鹏","r":8.9,"v":177,"i":"36086460"},{"t":"隐秘的羞耻感","a":"约翰·布拉德肖","r":8.3,"v":176,"i":"37258978"},{"t":"西出阳关","a":"梁优","r":8.0,"v":176,"i":"38469256"},{"t":"哈佛商学院判断与决策心理学课 (原书第8版)","a":"马克斯·巴泽曼","r":8.7,"v":176,"i":"35134970"},{"t":"1929","a":"安德鲁·罗斯·索尔金","r":7.8,"v":175,"i":"38487376"},{"t":"喜欢动物的人","a":"亚历山大·麦克劳德","r":7.7,"v":174,"i":"38541608"},{"t":"韦伯与社会科学的视野","a":"周雪光","r":8.3,"v":174,"i":"38202012"},{"t":"面孔","a":"里卡尔多·法尔奇内利","r":8.9,"v":173,"i":"37890148"},{"t":"布卢姆教育目标分类学","a":"洛林·W.安德森","r":8.6,"v":173,"i":"4210843"},{"t":"伊拉克，在死神脚下揾钱","a":"刘磊","r":7.3,"v":171,"i":"1486117"},{"t":"计算机网络：自顶向下方法（原书第8版）","a":"James F·Kurose","r":9.2,"v":169,"i":"36081529"},{"t":"政治学为什么重要","a":"安德鲁·甘布尔","r":8.4,"v":167,"i":"35653931"},{"t":"你怎么过今天，就怎么过今生","a":"尹烨","r":7.8,"v":166,"i":"38671769"},{"t":"世界图景的机械化","a":"爱德华·戴克斯特霍伊斯","r":9.3,"v":166,"i":"30354890"},{"t":"在历史中安顿自己","a":"许倬云 口述","r":8.5,"v":165,"i":"38410091"},{"t":"法西斯主义群众心理学","a":"威尔海姆·赖希","r":7.9,"v":165,"i":"1945390"},{"t":"创造知识的企业","a":"野中郁次郎","r":8.6,"v":163,"i":"1811450"},{"t":"泛托邦","a":"特蕾莎・汉尼根","r":8.5,"v":160,"i":"38446637"},{"t":"领导梯队 (第3版)","a":"拉姆·查兰","r":9.1,"v":160,"i":"37042789"},{"t":"明夜，谁将留存于这具身体","a":"七月","r":8.0,"v":159,"i":"37431538"},{"t":"椭圆形午后","a":"沈大成","r":8.7,"v":158,"i":"38501911"},{"t":"巴托比","a":"赫尔曼·梅尔维尔","r":7.9,"v":158,"i":"38592120"},{"t":"近代物理科学的形而上学基础","a":"埃德温·阿瑟·伯特","r":9.2,"v":158,"i":"30354895"},{"t":"魏玛十五年","a":"马国川","r":8.6,"v":157,"i":"38529630"},{"t":"即使不会游泳，也要浮出水面","a":"薇薇安·戈尔尼克","r":8.7,"v":156,"i":"38568443"},{"t":"科学的诞生","a":"戴维·伍顿","r":8.3,"v":156,"i":"27662712"},{"t":"神秘香气面包店","a":"土屋兔","r":6.6,"v":156,"i":"38193317"},{"t":"无暇赴死","a":"核融炉","r":7.1,"v":155,"i":"38469221"},{"t":"码头上的异乡人","a":"欧大旭","r":8.5,"v":155,"i":"38541645"},{"t":"我也是博物学家","a":"小红书","r":8.2,"v":154,"i":"38376506"},{"t":"空间物种","a":"乔治·佩雷克","r":8.1,"v":154,"i":"38581000"},{"t":"失语的皇后","a":"郭硕","r":7.6,"v":153,"i":"38613586"},{"t":"补拙记","a":"游本昌 口述","r":7.2,"v":152,"i":"38430856"},{"t":"惊人的假说","a":"弗朗西斯•克里克","r":7.2,"v":151,"i":"30171327"},{"t":"鲁本斯","a":"克里斯廷·洛泽·贝尔金","r":8.7,"v":151,"i":"30440793"},{"t":"存在主义物理学","a":"扎比内·霍森菲尔德","r":8.2,"v":150,"i":"36361960"},{"t":"夜神的礼物","a":"陈小手","r":9.0,"v":149,"i":"38559976"},{"t":"大宇之形","a":"丘成桐","r":8.8,"v":149,"i":"30135738"},{"t":"卡夫卡箴言集","a":"弗朗茨·卡夫卡","r":7.9,"v":148,"i":"38583811"},{"t":"镜中的自我","a":"西蒙·布莱克本","r":8.3,"v":147,"i":"38370481"},{"t":"洛克菲勒家书","a":"金南凡","r":8.6,"v":147,"i":"6425387"},{"t":"不确定状况下的判断","a":"丹尼尔·卡尼曼","r":8.7,"v":146,"i":"21325145"},{"t":"我在职高当班主任","a":"李亮","r":7.7,"v":146,"i":"38456350"},{"t":"巴纳姆博物馆","a":"斯蒂文·米尔豪瑟","r":8.4,"v":145,"i":"37648900"},{"t":"夜晚的语言学家","a":"陈笠","r":7.3,"v":145,"i":"38536534"},{"t":"一线表扬学","a":"管建刚","r":8.2,"v":143,"i":"26964722"},{"t":"仲夏日","a":"马克·科克尔","r":8.6,"v":142,"i":"38571706"},{"t":"图解大模型","a":"杰伊·阿拉马尔","r":7.9,"v":142,"i":"37339504"},{"t":"浓雾号角","a":"雷·布拉德伯里","r":8.9,"v":142,"i":"37401895"},{"t":"人体结构绘画重点","a":"崔元喜","r":8.8,"v":141,"i":"37096344"},{"t":"陶行知教育名篇","a":"方明","r":8.8,"v":141,"i":"1637623"},{"t":"数字电子技术基础","a":"阎石","r":8.0,"v":140,"i":"27664499"},{"t":"嫁给刘欢","a":"卢璐","r":7.5,"v":139,"i":"1069015"},{"t":"时间之子","a":"阿德里安·柴可夫斯基","r":8.5,"v":139,"i":"37426819"},{"t":"定三分","a":"谭木声","r":7.1,"v":138,"i":"38540782"},{"t":"神经科学原理（第5版）","a":"埃里克 R. 坎德尔","r":9.6,"v":137,"i":"25723403"},{"t":"中国式离婚","a":"贺欣","r":9.0,"v":137,"i":"38575722"},{"t":"教育漫话","a":"约翰·洛克","r":9.0,"v":137,"i":"30142508"},{"t":"物理学的困惑","a":"L.斯莫林","r":8.8,"v":136,"i":"30135701"},{"t":"巴菲特最推崇的8大企业家特质","a":"威廉·桑代克","r":7.4,"v":136,"i":"36110279"},{"t":"理解大脑","a":"约翰·E.道林","r":8.8,"v":133,"i":"35106826"},{"t":"凝神时刻","a":"邓安庆","r":8.7,"v":133,"i":"38593398"},{"t":"夺回时间","a":"马丁·黑格隆德","r":7.4,"v":131,"i":"38498568"},{"t":"所有无名的人","a":"陈年喜","r":8.1,"v":131,"i":"38523983"},{"t":"真实与虚幻","a":"厄休拉·勒古恩","r":9.5,"v":130,"i":"38431581"},{"t":"听妈妈的话","a":"李凡","r":9.0,"v":130,"i":"38540433"},{"t":"货币金融学（第十三版）","a":"弗雷德里克·米什金","r":9.4,"v":130,"i":"36892732"},{"t":"伦勃朗的眼睛","a":"西蒙·沙玛","r":9.2,"v":130,"i":"36832265"},{"t":"从混沌到有序","a":"普里戈金","r":8.9,"v":129,"i":"3201174"},{"t":"系统论--系统科学哲学","a":"魏宏森","r":8.3,"v":128,"i":"1008370"},{"t":"这就是中国古建筑","a":"王澍","r":8.0,"v":128,"i":"37530685"},{"t":"远山回忆","a":"奥尔罕·帕慕克","r":9.0,"v":127,"i":"38549105"},{"t":"布谷鸟那么小，宣告春天来临时那么骄傲","a":"利迪娅·若热","r":8.3,"v":126,"i":"38522014"},{"t":"里尔克传","a":"桑德拉·里希特","r":8.2,"v":126,"i":"38499937"},{"t":"Claude Code实战 Harness工程之道","a":"黄佳","r":8.9,"v":124,"i":"38445510"},{"t":"荒野之声","a":"戴维·乔治·哈斯凯尔","r":8.6,"v":123,"i":"36206033"},{"t":"普林斯顿计算机公开课 (原书第2版)","a":"Brian W. Kernighan","r":8.9,"v":123,"i":"36346586"},{"t":"黑洞战争","a":"伦纳德·萨斯坎德","r":8.3,"v":122,"i":"30145145"},{"t":"少年自有未来","a":"陈瑜","r":8.5,"v":121,"i":"38401320"},{"t":"偏向虎山行","a":"刘煜暄","r":7.7,"v":120,"i":"38546998"},{"t":"夏山学校","a":"A.S.尼尔","r":8.3,"v":120,"i":"37107575"},{"t":"124个梦","a":"乔治·佩雷克","r":7.3,"v":118,"i":"38546672"},{"t":"经济增长理论史","a":"罗斯托","r":9.1,"v":118,"i":"26733967"},{"t":"深陷泥沼的人类学家","a":"马蒂亚斯·埃纳尔","r":8.0,"v":117,"i":"38483071"},{"t":"你一生的化学反应","a":"孙亚飞","r":7.4,"v":117,"i":"36746775"},{"t":"不讨喜的女性","a":"安娜·博古茨卡娅","r":7.6,"v":117,"i":"38521461"},{"t":"无年龄的人","a":"莎朗·考夫曼","r":7.9,"v":117,"i":"38603049"},{"t":"权力与王座","a":"丹·琼斯","r":8.5,"v":116,"i":"38182714"},{"t":"计算机科学精粹","a":"沃德斯顿·费雷拉·菲尔多","r":8.5,"v":116,"i":"30382590"},{"t":"程序是怎样跑起来的（第3版）","a":"矢泽久雄","r":9.0,"v":116,"i":"36085560"},{"t":"Agent设计模式 图解可复用智能体架构","a":"黄佳","r":9.0,"v":115,"i":"38231086"},{"t":"利维坦","a":"托马斯·霍布斯","r":9.5,"v":114,"i":"37038186"},{"t":"路边野餐","a":"阿卡迪·斯特鲁伽茨基","r":8.8,"v":113,"i":"38391552"},{"t":"基辛格谈判法则","a":"詹姆斯·K. 塞贝纽斯","r":6.8,"v":113,"i":"35079441"},{"t":"树影墙前的夜晚","a":"彼得·汉德克","r":7.8,"v":112,"i":"38521980"},{"t":"死因解剖室","a":"法医秦明","r":6.1,"v":111,"i":"38583513"},{"t":"开普勒的精灵","a":"吴雅凌","r":7.8,"v":111,"i":"38469285"},{"t":"乌鸦的慰藉","a":"玛格丽特·伦克尔","r":8.9,"v":110,"i":"38521715"},{"t":"经学导论","a":"马楠","r":9.3,"v":108,"i":"38521447"},{"t":"灰质","a":"西奥多·H.施瓦茨","r":9.2,"v":107,"i":"38232273"},{"t":"政权与斗争剧目","a":"查尔斯·蒂利","r":8.5,"v":107,"i":"11520724"},{"t":"荒原","a":"马修·霍利斯","r":9.3,"v":106,"i":"37651104"},{"t":"一个村庄的陷落","a":"朱莉娅·博伊德","r":8.5,"v":105,"i":"38556395"},{"t":"人生没有对照组","a":"李清晨","r":8.6,"v":105,"i":"38232996"},{"t":"岁以百年","a":"曲柄睿","r":8.5,"v":104,"i":"38233483"},{"t":"世界美术名作二十讲","a":"傅雷","r":9.6,"v":104,"i":"38597147"},{"t":"咚咚吊桥，坠落","a":"绫辻行人","r":8.4,"v":103,"i":"38176014"},{"t":"宏观经济学史","a":"Michel De Vroey","r":9.6,"v":102,"i":"34880471"},{"t":"主权儿童","a":"亚伦·斯图普尔","r":6.3,"v":101,"i":"38389731"},{"t":"康熙","a":"史景迁","r":8.4,"v":99,"i":"38381103"},{"t":"AI的批判理论","a":"西蒙·林德格伦","r":7.7,"v":99,"i":"38570429"},{"t":"出远门","a":"高嘉程","r":8.8,"v":99,"i":"38686773"},{"t":"外婆的苦茶","a":"陈晓雯","r":8.3,"v":98,"i":"38605725"},{"t":"在线广告","a":"张亚东","r":6.4,"v":98,"i":"34632472"},{"t":"讨好反应","a":"英格丽德·克莱顿","r":8.0,"v":97,"i":"38435963"},{"t":"德里达传：一个事件，或许","a":"彼得·萨尔蒙","r":8.9,"v":96,"i":"38503894"},{"t":"化学之美","a":"菲利普·鲍尔","r":9.0,"v":95,"i":"37112071"},{"t":"色雷斯女仆的笑声","a":"汉斯·布鲁门贝格","r":8.7,"v":94,"i":"38457927"},{"t":"让无权无势者有力","a":"齐格蒙特·鲍曼","r":7.1,"v":94,"i":"38574884"},{"t":"认知心理学（第4版）","a":"大卫·格鲁姆","r":9.0,"v":93,"i":"38462750"},{"t":"深入理解分布式系统","a":"唐伟志","r":8.8,"v":93,"i":"35794814"},{"t":"世界诞生之日","a":"厄休拉·勒古恩","r":9.0,"v":93,"i":"38552193"},{"t":"飞蛾与山","a":"艾德·西泽","r":7.4,"v":92,"i":"38411260"},{"t":"组织与管理","a":"切斯特·巴纳德","r":9.3,"v":92,"i":"3639533"},{"t":"铸造天帝","a":"辛德勇","r":8.6,"v":91,"i":"38596783"},{"t":"你为什么会对自己不满意","a":"丛非从","r":7.4,"v":91,"i":"38584538"},{"t":"设计模式的艺术","a":"刘伟","r":9.5,"v":91,"i":"20493657"},{"t":"透明人","a":"伊利亚·伊里夫","r":8.3,"v":90,"i":"38487618"},{"t":"低限度的自我","a":"克里斯托弗·拉什","r":7.7,"v":90,"i":"38574767"},{"t":"了不起的概率思维","a":"项舒杨","r":9.1,"v":90,"i":"38560388"},{"t":"什么都不是的人才是快乐的","a":"克里希那穆提","r":8.5,"v":89,"i":"38635468"},{"t":"三个基尼","a":"弗吉尼亚·伍尔夫","r":8.6,"v":89,"i":"38405927"},{"t":"虞万里访谈录","a":"虞万里","r":9.6,"v":88,"i":"38431574"},{"t":"可疯","a":"杜可风","r":8.0,"v":88,"i":"38583378"},{"t":"AI工程","a":"奇普·萱","r":8.6,"v":87,"i":"38236657"},{"t":"认知行为疗法∶原著第三版","a":"朱迪丝·S.贝克","r":8.3,"v":86,"i":"36815051"},{"t":"画家中的画家","a":"张法中","r":9.2,"v":85,"i":"38509129"},{"t":"神经科学","a":"Mark F. Bear","r":9.3,"v":84,"i":"36603510"},{"t":"幻影小巷","a":"保罗·霍尔特","r":7.6,"v":84,"i":"38436570"},{"t":"学校生活社会学","a":"刘云杉","r":8.9,"v":83,"i":"1008934"},{"t":"马克思入门","a":"伊林·费彻尔","r":8.4,"v":82,"i":"38540661"},{"t":"第一次管人","a":"［美］洛伦·B. 贝克尔","r":8.2,"v":82,"i":"37161655"},{"t":"汉政与王道","a":"陈苏镇","r":8.6,"v":81,"i":"37322645"},{"t":"画作的诞生","a":"维克多·斯托伊奇塔","r":9.3,"v":81,"i":"36769664"},{"t":"夜奔","a":"黄鸿玺","r":8.8,"v":80,"i":"38535497"},{"t":"重新回到生活","a":"王小伟","r":8.8,"v":80,"i":"38594797"},{"t":"好好长大","a":"冈田尊司","r":8.0,"v":80,"i":"38460914"},{"t":"人类文明的自然大历史","a":"马克·伯特尼斯","r":8.5,"v":80,"i":"37271351"},{"t":"人杰","a":"庄秋水","r":9.3,"v":80,"i":"38434650"},{"t":"贫穷的本质：我们为什么摆脱不了贫穷","a":"阿比吉特·班纳吉","r":7.7,"v":80,"i":"37885481"},{"t":"开山令","a":"王笛","r":7.3,"v":79,"i":"38631100"},{"t":"计算机科学概论","a":"J.Glenn Brookshear","r":9.4,"v":79,"i":"2171700"},{"t":"电路","a":"James W.Nilsson","r":9.1,"v":79,"i":"3115415"},{"t":"大马士革事件","a":"尤金·罗根","r":8.4,"v":78,"i":"38562825"},{"t":"Head First C","a":"David Griffiths","r":8.6,"v":77,"i":"6919383"},{"t":"如何像女人那样思考","a":"丽甘·佩纳卢纳","r":8.7,"v":76,"i":"38434682"},{"t":"岭南十三讲","a":"叶兆言","r":7.7,"v":76,"i":"38427429"},{"t":"第一性原理思考法","a":"王晓辉","r":8.4,"v":76,"i":"38914933"},{"t":"我无所畏惧","a":"琳内·奥尔森","r":7.4,"v":75,"i":"37231977"},{"t":"复杂经济学","a":"布莱恩·阿瑟","r":8.6,"v":75,"i":"36453897"},{"t":"穿越","a":"巫鸿","r":8.6,"v":75,"i":"38583596"},{"t":"浴缸回忆录","a":"斯坦尼斯瓦夫·莱姆","r":7.5,"v":75,"i":"38530244"},{"t":"反映的实践者","a":"唐纳德·A·舍恩","r":7.7,"v":75,"i":"2108265"},{"t":"一个梦境旅行家的笔记","a":"米切尔·恩德","r":8.9,"v":74,"i":"38451628"},{"t":"长寿真相","a":"埃里克·托波尔","r":7.3,"v":74,"i":"37869729"},{"t":"数学女王的邀请","a":"远山启","r":8.7,"v":74,"i":"35097523"},{"t":"好大一棵树","a":"随机波动","r":8.6,"v":73,"i":"38572105"},{"t":"附魅世界的新科学","a":"马歇尔·萨林斯","r":6.9,"v":72,"i":"37399744"},{"t":"张爱玲","a":"宋明炜","r":8.4,"v":72,"i":"37231902"},{"t":"伦敦上学记","a":"杨猛","r":7.4,"v":72,"i":"38570465"},{"t":"中国共产主义运动探源","a":"李丹阳","r":9.3,"v":71,"i":"38461484"},{"t":"不开心的时候，就去运动吧！","a":"安德斯·汉森","r":9.0,"v":71,"i":"38598714"},{"t":"锦衾薄","a":"张倩仪","r":9.3,"v":71,"i":"38244890"},{"t":"女人与海","a":"格伦·斯托特","r":8.8,"v":70,"i":"38426855"},{"t":"照片的阅读方法","a":"名取洋之助","r":8.3,"v":69,"i":"38357093"},{"t":"转型时代的阅读与感怀","a":"周雪光","r":7.6,"v":68,"i":"38404232"},{"t":"从闺阁到报馆","a":"马育新","r":9.2,"v":68,"i":"38572216"},{"t":"我会画画","a":"鹏","r":9.0,"v":68,"i":"36523539"},{"t":"翻土的人","a":"李茜","r":8.6,"v":68,"i":"38583514"},{"t":"教育心理学（原书第15版）","a":"安妮塔·伍尔福克","r":9.3,"v":68,"i":"37517876"},{"t":"才华贵族","a":"阿德里安·伍尔德里奇","r":7.1,"v":68,"i":"37530754"},{"t":"大学十讲","a":"包刚升","r":7.9,"v":68,"i":"37537759"},{"t":"意大利蠢事集","a":"埃乌杰尼奥·蒙塔莱","r":7.6,"v":67,"i":"38552600"},{"t":"免疫力的真相","a":"丹尼尔·M.戴维斯","r":7.3,"v":67,"i":"38501249"},{"t":"镭之光","a":"达娃·索贝尔","r":8.8,"v":67,"i":"38536008"},{"t":"托举","a":"刘志云","r":9.5,"v":67,"i":"39001511"},{"t":"倩女","a":"蔡九迪","r":8.2,"v":66,"i":"38556587"},{"t":"乌鸦的日常","a":"松原始","r":8.3,"v":66,"i":"38451546"},{"t":"傀儡杀意","a":"M.W.克雷文","r":8.3,"v":66,"i":"38176037"},{"t":"时间一晃，人到中场","a":"姑苏阿焦","r":7.2,"v":66,"i":"38362592"},{"t":"行途遭逢的神奸（和毒恶生物）","a":"江绍原","r":7.9,"v":65,"i":"38635638"},{"t":"焦虑者的世界","a":"张鹂","r":7.7,"v":65,"i":"38571972"},{"t":"离世界末日还有十亿年！","a":"阿卡迪·斯特鲁伽茨基","r":6.6,"v":64,"i":"38391263"},{"t":"日尼薇","a":"安德烈·纪德","r":8.3,"v":63,"i":"38584581"},{"t":"蒙古帝国的阴影下","a":"鲁大维","r":8.5,"v":63,"i":"38067351"},{"t":"Token经济","a":"白惠天","r":7.5,"v":63,"i":"38597993"},{"t":"真探格尼系列1：读⼼谜咒","a":"约翰·弗登","r":8.1,"v":63,"i":"37648915"},{"t":"长寿经济","a":"泰康长寿时代研究院","r":9.4,"v":63,"i":"38612418"},{"t":"大一统的制度密码","a":"周黎安","r":8.2,"v":63,"i":"38574624"},{"t":"半导体简史","a":"王齐","r":8.5,"v":62,"i":"36127480"},{"t":"艺术与对象","a":"格拉汉姆·哈曼","r":8.4,"v":61,"i":"38449856"},{"t":"学术迷宫40问","a":"张励耕","r":9.8,"v":61,"i":"38613277"},{"t":"四大门","a":"李慰祖","r":8.3,"v":61,"i":"38594511"},{"t":"Word实战技巧精粹","a":"Excel Home","r":8.9,"v":61,"i":"3154337"},{"t":"照料你自己","a":"袁光锋","r":8.9,"v":60,"i":"38597446"},{"t":"我和我的北大学生","a":"杨善华","r":8.7,"v":60,"i":"38448556"},{"t":"计算机体系结构：量化研究方法（第6版）","a":"约翰·L.亨尼西","r":9.5,"v":60,"i":"36108789"},{"t":"到火山去","a":"克莱夫·奥本海默","r":9.0,"v":59,"i":"38536564"},{"t":"自然的观念","a":"罗宾·柯林伍德","r":8.3,"v":59,"i":"1205566"},{"t":"巴赫传","a":"拉蒙·安德烈斯","r":8.3,"v":59,"i":"37118757"},{"t":"我读鲁迅","a":"刀尔登","r":7.6,"v":59,"i":"38578575"},{"t":"唐玄宗","a":"刘文瑞","r":8.5,"v":57,"i":"38578374"},{"t":"宏观经济学（第三版）","a":"达龙·阿西莫格鲁","r":9.5,"v":57,"i":"36971585"},{"t":"烟草计划","a":"巫鸿","r":8.9,"v":57,"i":"38204278"},{"t":"看高一线","a":"关明生","r":8.6,"v":57,"i":"38591092"},{"t":"作为世界象征的游戏","a":"欧根·芬克","r":8.2,"v":56,"i":"38531492"},{"t":"沙墓","a":"吉丹贾丽·斯里","r":8.3,"v":55,"i":"37394328"},{"t":"大脑高效休息法","a":"约瑟夫·杰贝利","r":7.2,"v":55,"i":"38554966"},{"t":"超赞的一代","a":"乔纳森·海特","r":7.9,"v":55,"i":"38435566"},{"t":"天才有天才的路 我有我的","a":"战鹰","r":8.6,"v":54,"i":"38686495"},{"t":"植物学家的致意","a":"M.W.克雷文","r":6.5,"v":54,"i":"38176038"},{"t":"电影的色彩","a":"查尔斯 · 布拉梅斯科","r":8.6,"v":53,"i":"38492034"},{"t":"维特根斯坦笔记","a":"路德维希·维特根斯坦","r":8.2,"v":52,"i":"38519811"},{"t":"Digital Design and Computer Architecture","a":"David Harris","r":9.2,"v":52,"i":"10801996"},{"t":"《坛经》与人生修行","a":"王德峰","r":9.1,"v":51,"i":"38576121"},{"t":"看见情绪","a":"刘正奎","r":8.4,"v":51,"i":"38607113"},{"t":"鸟类绘画入门","a":"约翰·缪尔·劳斯","r":8.8,"v":51,"i":"38576025"},{"t":"僧与机器人的漫游","a":"贝基 ·钱伯斯","r":7.7,"v":51,"i":"38413675"},{"t":"自洽大脑","a":"保罗·戈德史密斯","r":8.2,"v":51,"i":"38239439"},{"t":"奇怪的生物图鉴（增订版）","a":"沼笠航","r":9.1,"v":50,"i":"38531185"},{"t":"蓝白红","a":"克日什托夫·基耶斯洛夫斯基","r":9.1,"v":50,"i":"38521876"},{"t":"逃离新世界","a":"张小北","r":7.2,"v":50,"i":"38536093"},{"t":"她独自生活","a":"戴显婧","r":8.7,"v":50,"i":"38649979"},{"t":"错位天子与帝国困局","a":"林金树","r":7.2,"v":49,"i":"38547189"},{"t":"历史与自由意识","a":"安德烈亚斯·阿恩特","r":9.0,"v":49,"i":"37647061"},{"t":"认知的不正义","a":"米兰达·弗里克","r":8.4,"v":49,"i":"38413867"},{"t":"擅自温柔","a":"郭红","r":8.1,"v":49,"i":"38583548"},{"t":"相见恨短","a":"杨全强","r":9.1,"v":49,"i":"37349707"},{"t":"重读商业经典","a":"郑毓煌","r":8.3,"v":49,"i":"38369387"},{"t":"德国士人的衰落","a":"弗里茨·林格","r":9.4,"v":48,"i":"38535508"},{"t":"福柯：广播电台访谈1961-1983 I","a":"米歇尔·福柯","r":8.4,"v":48,"i":"38915050"},{"t":"The Art of Doing Science and Engineering","a":"Richard W. Hamming","r":9.9,"v":48,"i":"35084167"},{"t":"过度教育","a":"石井光太","r":8.2,"v":47,"i":"38531748"},{"t":"千年一窟看云冈","a":"王凯","r":9.7,"v":47,"i":"37862141"},{"t":"学神的习惯","a":"方士心","r":8.5,"v":47,"i":"37156596"},{"t":"重归本真","a":"郝苑","r":9.2,"v":45,"i":"38189818"},{"t":"蕨类观察手册","a":"王云涯","r":9.3,"v":45,"i":"38435154"},{"t":"迷人的身体","a":"加布里埃尔·韦斯顿","r":8.2,"v":45,"i":"38559358"},{"t":"人间存一角","a":"张乐陆","r":9.2,"v":45,"i":"38583563"},{"t":"密语","a":"郑子宁","r":7.8,"v":44,"i":"38425448"},{"t":"迷人的气体","a":"马克·米奥多尼克","r":9.2,"v":44,"i":"37525230"},{"t":"权谋与霸业","a":"毛佩琦","r":8.5,"v":44,"i":"38547250"},{"t":"共鸣","a":"哈特穆特·罗萨","r":8.0,"v":42,"i":"38490032"},{"t":"造神之后","a":"罗伯特·赖特","r":7.7,"v":42,"i":"38902153"},{"t":"死过千回的女子","a":"朱洁琳","r":8.9,"v":42,"i":"37925535"},{"t":"莫里斯·布朗肖传","a":"克里斯托夫·毕当","r":9.7,"v":42,"i":"38382251"},{"t":"经济思想的激辩","a":"哈维尔·米莱","r":7.1,"v":42,"i":"38531774"},{"t":"痛苦·快乐·更大的善好","a":"凯西·吉尔","r":8.1,"v":41,"i":"38232579"},{"t":"数学结构的力量","a":"马库斯·杜·索托伊","r":7.5,"v":41,"i":"38501258"},{"t":"细胞：地球生命的建筑师","a":"阿方索·马丁内斯·阿里亚斯","r":8.9,"v":41,"i":"36950215"},{"t":"植物的盛会","a":"理查德·梅比","r":8.9,"v":41,"i":"37940588"},{"t":"身在田野","a":"林小英","r":7.9,"v":41,"i":"38560310"},{"t":"观念的穹顶：经济思想史二十四讲","a":"罗杰·E.巴克豪斯","r":8.9,"v":41,"i":"38509144"},{"t":"地下的灵域","a":"巫鸿","r":9.2,"v":41,"i":"37764064"},{"t":"一个社会学家的临终笔记","a":"埃里克·欧林·赖特","r":9.0,"v":40,"i":"38517256"},{"t":"塔缪的世界","a":"贾妍","r":9.1,"v":40,"i":"38395104"},{"t":"独处的人：蒙田随笔","a":"法]米歇尔·德·蒙田","r":7.4,"v":40,"i":"37497862"},{"t":"人才致胜","a":"琳达·D. 夏基","r":8.0,"v":40,"i":"38547029"},{"t":"进化心理学（第6版）","a":"戴维·巴斯","r":8.3,"v":39,"i":"38407136"},{"t":"一个人的博物馆","a":"扫舍","r":8.8,"v":39,"i":"38584500"},{"t":"中国专制君主政制之评议","a":"张君劢","r":9.1,"v":39,"i":"36455942"},{"t":"梯航四海","a":"陈高华","r":8.9,"v":38,"i":"38500988"},{"t":"国家为什么会成功","a":"方绍伟","r":6.5,"v":38,"i":"38644945"},{"t":"有风无风都自由","a":"高军","r":8.7,"v":38,"i":"38616611"},{"t":"给予的力量","a":"鲍勃·伯格","r":8.8,"v":37,"i":"38615970"},{"t":"镜中镜","a":"米切尔·恩德","r":8.3,"v":36,"i":"38451627"},{"t":"俄罗斯草原边境","a":"迈克尔·霍达尔科夫斯基","r":9.0,"v":35,"i":"38556201"},{"t":"分析模式","a":"马丁·福勒","r":7.6,"v":34,"i":"35231629"},{"t":"权力与风格","a":"罗伯特·哈里曼","r":8.3,"v":34,"i":"36536790"},{"t":"非物质主义","a":"格拉汉姆·哈曼","r":8.4,"v":33,"i":"38547008"},{"t":"我选择不再重复创伤","a":"爱丽丝·米勒","r":8.2,"v":33,"i":"38564040"},{"t":"不急不躁，孩子数学会开窍","a":"胡小群","r":8.2,"v":33,"i":"38652382"},{"t":"软件工程师进阶导航","a":"盖尔盖伊·奥罗斯","r":8.7,"v":32,"i":"37837192"},{"t":"AI时代的管理","a":"陈春花","r":9.7,"v":32,"i":"38615514"},{"t":"情商谈判","a":"莫里·塔赫里保尔","r":8.2,"v":32,"i":"37120085"},{"t":"失去","a":"安德雷亚斯·莱克维茨","r":8.4,"v":31,"i":"38591481"},{"t":"源力","a":"〔英〕塔拉·斯沃特","r":8.2,"v":31,"i":"38546482"},{"t":"好世界","a":"韦羲","r":9.2,"v":31,"i":"38522747"},{"t":"脆弱社会","a":"弗劳克·罗斯塔尔斯基","r":7.3,"v":30,"i":"38547002"},{"t":"爱上单片机","a":"杜洋","r":8.7,"v":30,"i":"6937742"},{"t":"身如焰","a":"韩松落","r":9.7,"v":29,"i":"38617131"},{"t":"鼎革之气","a":"罗伯特·达恩顿","r":8.5,"v":29,"i":"38518391"},{"t":"挑灯覆枯棋","a":"吉辰","r":8.3,"v":29,"i":"38649252"},{"t":"改变世界的十个番茄：一部酸甜的文化史","a":"［美] 威廉·亚历山大 ；佟金宇","r":7.4,"v":29,"i":"38430339"},{"t":"运动到100岁","a":"田同生","r":9.0,"v":29,"i":"38543857"},{"t":"沉默的回响","a":"陈碧","r":7.6,"v":29,"i":"38672452"},{"t":"哲学如何让人获得快乐","a":"弗雷德里克·勒努瓦","r":7.8,"v":28,"i":"38465261"},{"t":"遗忘谷","a":"珍妮·埃琳·史密斯","r":8.5,"v":28,"i":"38634114"},{"t":"亚历山大传","a":"菲利普·弗里曼","r":9.2,"v":28,"i":"38573829"},{"t":"不平等的大学","a":"保罗·塔夫","r":8.4,"v":28,"i":"38451013"},{"t":"无限游戏","a":"陈科","r":9.0,"v":28,"i":"38443838"},{"t":"那刺眼的黑暗","a":"塔哈尔·本·杰伦","r":8.6,"v":27,"i":"37180720"},{"t":"无形战力","a":"卢毅","r":8.6,"v":27,"i":"38675358"},{"t":"信仰的外化","a":"巫鸿","r":8.9,"v":27,"i":"38384973"},{"t":"MoMA的故事","a":"［法］昆汀·巴耶克","r":9.5,"v":27,"i":"38445606"},{"t":"古画侦探","a":"李晓愚","r":7.1,"v":27,"i":"36989027"},{"t":"章法九讲","a":"方建勋","r":8.1,"v":26,"i":"38406126"},{"t":"诡计总导演","a":"片冈翔","r":7.0,"v":26,"i":"38490281"},{"t":"一百条裙子","a":"埃莉诺·埃斯特斯","r":8.1,"v":26,"i":"38415254"},{"t":"思维的演化","a":"迈克尔·托马塞洛","r":8.7,"v":25,"i":"38635027"},{"t":"巴勒斯坦百年战争","a":"拉希德·哈立迪","r":8.1,"v":24,"i":"38571963"},{"t":"什么是政治哲学","a":"查尔斯·拉莫尔","r":9.2,"v":24,"i":"38197722"},{"t":"生态化生存","a":"提摩西·莫顿","r":8.0,"v":24,"i":"38542908"},{"t":"数学手册（原书第10版）","a":"布龙施泰因","r":9.3,"v":24,"i":"35350415"},{"t":"理解深度学习","a":"西蒙 J D 普林斯","r":8.5,"v":24,"i":"37451436"},{"t":"通信的数学理论","a":"克劳德·E.香农","r":9.7,"v":24,"i":"37225528"},{"t":"Writing A Compiler In Go","a":"Thorsten Ball","r":9.1,"v":23,"i":"30303705"},{"t":"金融级IT架构：数字银行的云原生架构解密","a":"网商银行技术","r":8.1,"v":23,"i":"35543449"},{"t":"Free Software, Free Society","a":"Richard M. Stallman","r":9.4,"v":23,"i":"1419628"},{"t":"教育改变命运？","a":"阿拉丁•艾尔-玛法拉尼","r":8.4,"v":23,"i":"38244888"},{"t":"我们还不错","a":"安东尼·霍普金斯","r":8.7,"v":22,"i":"38611075"},{"t":"我偏爱生活的例外","a":"米哈乌·鲁西内克","r":8.9,"v":22,"i":"38686393"},{"t":"计算机代数系统的数学原理","a":"李超","r":9.0,"v":22,"i":"5346530"},{"t":"沟通力就是执行力","a":"赵伟","r":6.6,"v":22,"i":"30167086"},{"t":"为什么是“他”","a":"南希·林迪斯法恩","r":8.7,"v":21,"i":"38385403"},{"t":"还没有思考过灰色的人","a":"彼得·斯洛特戴克","r":8.5,"v":20,"i":"38521713"},{"t":"老子","a":"吴展良","r":8.8,"v":20,"i":"38603736"},{"t":"大脑是如何抑郁的","a":"卡米拉·诺德","r":8.3,"v":19,"i":"38536895"},{"t":"弗洛伊德与精神分析家的欲望","a":"塞尔日·科泰","r":8.8,"v":19,"i":"38529592"},{"t":"芯片制造","a":"赞特","r":8.8,"v":19,"i":"1239530"},{"t":"海难与旁观者","a":"汉斯·布鲁门贝格","r":8.5,"v":18,"i":"38561069"},{"t":"水彩练习曲","a":"简忠威","r":9.4,"v":18,"i":"37648101"},{"t":"将怀疑作为方法","a":"伯特兰·罗素","r":8.3,"v":17,"i":"38556442"},{"t":"关键对话：如何高效能沟通（原书第3版）（精装版） (美)约瑟夫·格雷尼","a":"约瑟夫·格雷尼","r":8.7,"v":17,"i":"36926879"},{"t":"哲学写作入门","a":"A.P.马蒂尼奇","r":9.6,"v":16,"i":"38512605"},{"t":"从浪漫主义到批判理论","a":"安德鲁·鲍伊","r":9.3,"v":16,"i":"38399644"},{"t":"万物的秩序","a":"杰森·罗伯茨","r":8.0,"v":16,"i":"38408076"},{"t":"欧拉崛起：从华为走向世界","a":"方兴东","r":7.7,"v":16,"i":"36573429"},{"t":"给忙碌者的世界神话传说","a":"狄·狄·钱尼","r":8.6,"v":15,"i":"38434717"},{"t":"小共同体","a":"罗伯特·雷德菲尔德","r":8.2,"v":15,"i":"38521382"},{"t":"冷战时期的经济学家","a":"艾伦·博拉尔德","r":7.1,"v":15,"i":"38494841"},{"t":"闯入者","a":"米歇尔·安特比","r":8.7,"v":14,"i":"38525376"},{"t":"DeepSeek Harness 技术入门与架构原理","a":"亦凯","r":8.4,"v":14,"i":"38903949"},{"t":"西点执行课","a":"斯科特·斯奈尔","r":6.6,"v":14,"i":"1840813"},{"t":"科学革命的深化与重构","a":"托马斯·库恩","r":9.4,"v":12,"i":"37842728"},{"t":"现象学的自我","a":"赵猛","r":8.4,"v":12,"i":"38422489"},{"t":"货币的秩序","a":"缪延亮","r":7.6,"v":12,"i":"38594508"},{"t":"速写这件小事","a":"尼尚特·贾因","r":7.8,"v":12,"i":"38521364"},{"t":"论逃离","a":"伊曼纽尔·列维纳斯","r":8.7,"v":11,"i":"38596789"},{"t":"人生就是一场化学","a":"伊乔玛·乌切格布","r":7.6,"v":11,"i":"38635825"},{"t":"涌现：从简单规则到复杂世界","a":"张江","r":9.4,"v":11,"i":"38647368"},{"t":"繁荣的困局","a":"魏尚进","r":9.4,"v":11,"i":"38179990"},{"t":"观念与叙事","a":"巫鸿","r":9.0,"v":11,"i":"37806137"},{"t":"我不是差生","a":"谢岚","r":8.0,"v":11,"i":"38489232"},{"t":"存在的考验","a":"陈斯一","r":9.6,"v":10,"i":"38547014"}]}</script>
 <script id="SCAN_JS">/* scan_core.js — 前端从零扫描：文件名解析 / 分类 / 分卷 / 查重
  *
  * 与 scripts/common.py + scan_library.py 的算法对齐，纯 JS、无依赖。
@@ -405,6 +520,7 @@ footer .n b{color:var(--accent);font-size:15px}
                           '.txt', '.doc', '.docx', '.prc', '.chm', '.rtf'];
 
   var NON_BOOK_RE = /(^My Clippings|^已阅书籍|^经典书籍清单|^kindle阅读榜单|^IMG_|^DSC|^IMAG|^\d{3,6}$|^CR!|^EBOK|^B[A-Z0-9]{9,}$)/i;
+  var READ_DIR_MARK = '已阅';   // 与 scan_library.py 保持一致：路径含「已阅」目录即预标已读
   var ASIN_RE = /[_\-\s]?B0[A-Z0-9]{8}\S*$/i;
   var SUFFIX_RE = /(_sample|_copy|_sample\d*|\(\d+\)|（\d+）|kindle正版|kindle版|升级版|珍藏版|典藏版|完整图文版|精编图文版|图文版|v\d+\.\d+|第\d+版|修订版|白金版|纪念版)$/i;
   var NOISE_RE = /(【中亚】|\[中亚\]|通俗说\S*|tongsushuo\.com|www\.\S+|\.com)/gi;
@@ -866,6 +982,11 @@ footer .n b{color:var(--accent);font-size:15px}
         if (title.indexOf(short) < 0) title = title + ' · ' + short;
       }
       var sk = makeSk('file', head.rel);
+      var inReadDir = files.some(function (f) {
+        return f.rel.split('/').slice(0, -1).some(function (p) {
+          return p.indexOf(READ_DIR_MARK) >= 0;
+        });
+      });
       cards.push({
         sk: sk,
         id: 'f:' + hash8(sk + '|' + files.length),
@@ -893,7 +1014,7 @@ footer .n b{color:var(--accent);font-size:15px}
         intro_short: '',
         author_famous: false,
         suspect: false,
-        read: false,
+        read: inReadDir,
         locked_keep: false,
         __src: 'scan'
       });
@@ -961,6 +1082,119 @@ let BY_ID = new Map(ALL.map(b=>[b.id,b]));
 const META = DB.meta || {};
 let LIB_SOURCE = META.source || 'embedded';
 const BOOK_EXT = new Set((META.book_ext||['.mobi','.epub','.pdf','.azw3','.azw','.kfx','.txt','.doc','.docx']).map(e=>e.toLowerCase()));
+
+/* ---------- 内置豆瓣评分包 ----------
+   浏览器跨不过豆瓣的跨域限制，所以下载这个工具的人扫完自己的文件夹是没有评分的。
+   构建时把豆瓣 Top250 + 常见高分榜（书名 / 作者 / 评分）内嵌进来，
+   扫描后按「书名 + 作者」自动补；对不上就留空——宁可没有，也不能填错。
+
+   匹配原则（准确优先，宁缺勿错）：
+   1) 绝不「标题唯一就直接认」——必须作者也对得上；
+   2) 作者缺失、作者冲突、候选有歧义 → 一律不匹配，留空；
+   3) 作者比较走「标准化后完全一致」或「拆成姓名集合后一致」，
+      不做「两个字符前缀」「宽泛互相包含」这类宽松判断。 */
+const PACK_RAW = (()=>{ try{ return JSON.parse(document.getElementById('DOUBAN_PACK').textContent)||{}; }catch(e){ return {}; } })();
+const PACK_ITEMS = PACK_RAW.items||[];
+const PACK_IDX = new Map();        // 宽松键：去副标题 → 候选（只用于召回）
+const PACK_IDX_S = new Map();      // 严格键：保留副标题与卷次 → 候选（首选）
+const PACK_BRACKET=/[（(【\[［][^）)】\]］]*[）)】\]］]/g;
+function packNorm(s){                       // 宽松：只用来召回候选
+  if(!s) return '';
+  return String(s)
+    .replace(/\s*[:：]\s*.*$/,'')
+    .replace(/\s*[—–]{1,2}\s*.*$/,'')
+    .replace(/\s+-\s+.*$/,'')
+    .replace(PACK_BRACKET,'')
+    .replace(/[^\w一-鿿]/g,'')
+    .toLowerCase();
+}
+function packStrict(s){                     // 严格：副标题、罗马数字都保留
+  if(!s) return '';
+  return String(s)
+    .replace(PACK_BRACKET,'')
+    .replace(/[^\w一-鿿\u2160-\u218f]/g,'')
+    .toLowerCase();
+}
+function packPush(idx,key,it){
+  if(!key) return;
+  const arr=idx.get(key);
+  if(arr) arr.push(it); else idx.set(key,[it]);
+}
+for(const it of PACK_ITEMS){
+  packPush(PACK_IDX_S, packStrict(it.t), it);
+  packPush(PACK_IDX,   packNorm(it.t),   it);
+}
+/* 作者标准化：去括注、去国籍前缀、去所有分隔符 */
+function packAuthorNorm(s){
+  if(!s) return '';
+  return String(s)
+    .replace(PACK_BRACKET,'')
+    .replace(/[\s·•・,，、;；:：\-—_/\\|.]/g,'')
+    .replace(/著$/,'')
+    .toLowerCase();
+}
+/* 作者拆成姓名集合：按分隔符切，单段不足 2 字丢弃 */
+function packAuthorParts(s){
+  return String(s||'')
+    .replace(PACK_BRACKET,'')
+    .split(/[·•・,，、;；/\\|]+/)
+    .map(x=>x.replace(/[\s.。\-—_]+/g,'').toLowerCase())
+    .filter(x=>x.length>=2);
+}
+function packAuthorEq(a,b){
+  const na=packAuthorNorm(a), nb=packAuthorNorm(b);
+  if(!na||!nb) return false;                 // 作者缺失 → 不算对得上
+  if(na===nb) return true;                   // 标准化后完全一致
+  const ta=packAuthorParts(a), tb=packAuthorParts(b);
+  if(ta.length>=2 && ta.length===tb.length){
+    const sa=ta.slice().sort().join('|'), sb=tb.slice().sort().join('|');
+    if(sa===sb) return true;                 // 同一批姓名，只是顺序 / 分隔符不同
+  }
+  return false;
+}
+/* 宽松召回时，只接受「候选标题 + 分隔符 + 副标题」的从属关系，
+   避免把「第 2 部」「上册」当成同一本书 */
+function packSubtitleOf(candTitle,queryTitle){
+  const c=String(candTitle||'').replace(/\s+/g,'');
+  const q=String(queryTitle||'').replace(/\s+/g,'');
+  if(!c||!q) return false;
+  if(c===q) return true;
+  if(!q.startsWith(c)) return false;
+  return /^[：:—–\-－·《（(【\[|]/.test(q.slice(c.length));
+}
+function packFind(title,author){
+  const a=String(author||'').trim();
+  if(!a) return null;                        // 作者缺失：不靠标题单独认
+  let cands=PACK_IDX_S.get(packStrict(title))||[];
+  let loose=false;
+  if(!cands.length){ cands=PACK_IDX.get(packNorm(title))||[]; loose=true; }
+  if(!cands.length) return null;
+  if(loose){
+    cands=cands.filter(c=>packSubtitleOf(c.t,title));
+    if(!cands.length) return null;
+  }
+  const hits=cands.filter(c=>packAuthorEq(a,c.a));
+  if(!hits.length) return null;               // 作者对不上 → 不填
+  if(hits.length>1 && new Set(hits.map(c=>c.r)).size>1) return null;  // 评分不一致＝有歧义 → 不填
+  return hits[0];
+}
+window.EbooklibPack = { count: PACK_ITEMS.length, index: PACK_IDX.size, indexStrict: PACK_IDX_S.size,
+  find: (t,a)=>packFind(t,a),
+  sample: (n)=>ALL.slice(0,n||6).map(b=>[b.title,b.author,b.rating]),
+  rated: ()=>ALL.filter(b=>b.rating>0).length, label: ()=>sourceLabel() };
+function fillFromPack(list){
+  if(!PACK_IDX.size) return 0;
+  let n=0;
+  for(const b of (list||ALL)){
+    if(!b || b.rating>0) continue;
+    const hit=packFind(b.title,b.author);
+    if(!hit) continue;
+    b.rating=hit.r; b.votes=hit.v;
+    b.douban=Object.assign({},b.douban||{},{url:'https://book.douban.com/subject/'+hit.i+'/',pack:1});
+    n++;
+  }
+  return n;
+}
 
 /* ---------- 存储命名空间搬迁：只复制、不删除、可回滚 ----------
    历史版本把评分 / 进度 / 笔记写在另一套前缀下。这里按「后缀形态」识别，
@@ -1087,7 +1321,7 @@ function saveNow(){
     console.error('状态保存失败',e);
     // 配额满：把已迁空的 note 再清一次再试，仍失败则明确提示，不再静默吞掉
     try{ state.note={}; localStorage.setItem(LS_V3,JSON.stringify(state)); }
-    catch(e2){ toast('浏览器存储已满，请先点「备份」导出，再清理旧数据'); }
+    catch(e2){ toast('浏览器存储已满，请先点「完整备份」导出，再清理旧数据'); }
   }
 }
 /* 评分等关键状态同步落盘：打完分立刻刷新 / 关标签页也不能丢。
@@ -1107,7 +1341,7 @@ document.addEventListener('visibilitychange', ()=>{
 });
 
 let F={cat:'全部',rd:'all',dup:false,scan:true,tag:false,minR:0,q:'',noRate:false,suspect:false,junk:false,
-       hide:true,partial:false,myRate:false,reading:false,finished:false,notes:false};
+       hide:true,partial:false,myRate:false,reading:false,notes:false};
 const sel=new Set();
 let lastIdx=-1;
 let SYNC=null;
@@ -1186,7 +1420,7 @@ async function flushNotesNow(){
     const o={}; NOTES.forEach((v,k)=>o[k]=v);
     localStorage.setItem(LS_NOTES,JSON.stringify(o));
     return true;
-  }catch(e){ toast('笔记保存失败：存储空间不足，请先「备份」导出'); return false; }
+  }catch(e){ toast('笔记保存失败：存储空间不足，请先「完整备份」导出'); return false; }
 }
 let noteT=null, noteDirty=false;
 function setNote(sk,text){
@@ -1205,7 +1439,7 @@ function stampSaved(ok){
   const el=document.getElementById('dNoteHint');
   if(!el) return;
   const t=new Date();
-  el.textContent = ok===false ? '保存失败（存储已满，请先备份）'
+  el.textContent = ok===false ? '保存失败（存储已满，请先完整备份）'
     : `已保存 ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')} · 正文存本机浏览器`;
 }
 
@@ -1215,7 +1449,7 @@ ALL.forEach(b=>{ if(b.kind==='scanset'){ if(b.rel) REL2SK.set(normr(b.rel),b.sk)
 
 /* ================= 书单替换 / 持久化 / 从零扫描 =================
    页面内嵌的书单是构建期静态数据；这里让它在运行时可被
-   「前端扫描」「导入书库 JSON」「示例数据」三种来源替换。
+   「前端扫描」「恢复（载入书库 JSON）」「示例数据」三种来源替换。
    关键：替换只动书卡数组，state（评分/进度/笔记/隐藏）一个键都不动。 */
 const LS_HAS_LIB='ebooklib_has_library_v1', LS_SEEN='ebooklib_welcome_seen_v1';
 const LIB_KEY='userLibrary';
@@ -1299,7 +1533,8 @@ async function seedLegacyIDB(){
 
 function sourceLabel(){
   return (LIB_SOURCE==='demo'||LIB_SOURCE==='embedded') ? '示例书单'
-       : LIB_SOURCE==='scan' ? '本地扫描 · 无豆瓣评分'
+       : LIB_SOURCE==='scan' ? (ALL.some(b=>b.rating>0) ? '本地扫描 · 含内置评分包补分' : '本地扫描 · 无豆瓣评分')
+       : LIB_SOURCE==='restore' ? '备份还原 · 含评分笔记'
        : LIB_SOURCE==='import' ? '已导入完整数据' : '内置书单';
 }
 function replaceLibrary(books,scans,source){
@@ -1307,6 +1542,7 @@ function replaceLibrary(books,scans,source){
   SCANS.splice(0,SCANS.length,...(scans||[]));
   ALL=BOOKS.concat(SCANS);
   LIB_SOURCE=source||'embedded';
+  const packed=fillFromPack(ALL);   // 内置评分包兜底：只补空评分，不改已有豆瓣数据
   DB.stats=Object.assign({},DB.stats,{
     entries:ALL.length, file_books:BOOKS.length,
     scanset_bytes:SCANS.reduce((s,b)=>s+(b.total_size||0),0)
@@ -1315,6 +1551,7 @@ function replaceLibrary(books,scans,source){
   DB.meta=Object.assign({},META,{source:LIB_SOURCE});
   reindex();
   rebuildCats();
+  return packed;
 }
 async function persistLibrary(books,scans,source){
   try{
@@ -1368,25 +1605,34 @@ function normalizeCard(b){
   o.dup_count=o.dup_count||o.files.length||1;
   return o;
 }
-async function importLibraryData(file){
-  if(!file) return;
-  if(file.size>25*1024*1024){ toast('文件超过 25MB，已拒绝'); return; }
-  let d;
-  try{ d=JSON.parse(await file.text()); }
-  catch(e){ toast('不是有效的 JSON 文件'); return; }
-  if(!d||!Array.isArray(d.books)){ toast('不是书库数据文件（缺少 books 数组）'); return; }
-  const books=d.books.map(normalizeCard), scans=(d.scansets||[]).map(normalizeCard);
-  replaceLibrary(books,scans,'import');
-  await persistLibrary(books,scans,'import');
-  renderCats(); render(); updateStoreBadge();
-  toast(`已导入 ${ALL.length} 条书卡，你的评分与笔记保持不变`);
-}
 async function applyScanResult(cards){
   if(!cards||!cards.length){ toast('没有找到可识别的电子书文件'); return false; }
-  replaceLibrary(cards,[],'scan');
-  await persistLibrary(cards,[],'scan');
+  // 整库替换：上一条书单「同步判定已删」的结论对新书单毫无意义，必须清掉，
+  // 否则会残留一批指向旧条目的 autoHidden，把新书单里的同 sk 条目一起压掉。
+  if(state.autoHidden && Object.keys(state.autoHidden).length){ state.autoHidden={}; saveImmediate(); }
+  // 重新扫描只能拿到文件名和体积；建库时烤进去的豆瓣信息（评分/出版社/作者）
+  // 只要 sk 对得上就带过来，免得还原过的完整书单被一次「同步本地书库」洗掉评分。
+  const prev=new Map(ALL.map(b=>[b.sk,b]));
+  let kept=0;
+  cards=cards.map(c=>{
+    const o=prev.get(c.sk);
+    if(!o || (!o.rating && !o.douban && !o.author)) return c;
+    if(o.rating||o.douban) kept++;
+    return Object.assign({},c,{
+      rating:c.rating||o.rating||0,
+      votes:c.votes||o.votes||0,
+      author:c.author||o.author||'',
+      douban:c.douban||o.douban||null,
+    });
+  });
+  const nextSrc=kept?'restore':'scan';
+  const packed=replaceLibrary(cards,[],nextSrc);
+  await persistLibrary(cards,[],nextSrc);
   renderCats(); render(); updateStoreBadge();
-  toast(`已生成 ${cards.length} 本书 · 纯前端扫描无豆瓣评分，可点「导入书库」补全`);
+  toast(`已生成 ${cards.length} 本书`
+    + (kept?` · ${kept} 本沿用原有评分`:'')
+    + (packed?` · ${packed} 本由内置评分包补到豆瓣分`:'')
+    + (!kept&&!packed?' · 内置评分包没匹配上，可点「恢复」载入完整书单':''));
   return true;
 }
 async function pickDir(){
@@ -1410,7 +1656,7 @@ async function pickDir(){
   return h;
 }
 async function scanFromPicker(){
-  if(!DS){ toast('扫描模块未加载，请改用「导入书库」'); return; }
+  if(!DS){ toast('扫描模块未加载，请改用「恢复」载入书库数据'); return; }
   let inFrame=false;
   try{ inFrame=window.self!==window.top; }catch(e){ inFrame=true; }
   if(inFrame || !window.isSecureContext || !('showDirectoryPicker' in window)){
@@ -1459,7 +1705,7 @@ function showIframeHint(){
   const el=document.getElementById('wIframe');
   if(!el) return;
   el.style.display='block';
-  el.innerHTML='当前在预览框架里，浏览器不允许选择本地文件夹。<br>请用 Chrome / Edge <b>独立标签页</b>打开本页，或点「导入书库」载入本机生成的数据文件。'
+  el.innerHTML='当前在预览框架里，浏览器不允许选择本地文件夹。<br>请用 Chrome / Edge <b>独立标签页</b>打开本页，或点「恢复」载入本机生成的数据文件。'
     +' <button class="mini-btn" id="wOpenNew">在新标签打开</button>';
   document.getElementById('wOpenNew').onclick=()=>window.open(location.href.split('#')[0],'_blank','noopener');
   if(!WELCOME_OPEN) openWelcome();
@@ -1470,11 +1716,73 @@ document.getElementById('wSkip').onclick=()=>closeWelcome(true);
 document.getElementById('wClose').onclick=()=>closeWelcome(false);
 document.getElementById('wScrim').onclick=()=>closeWelcome(true);
 document.getElementById('btnGuide').onclick=()=>openWelcome();
-document.getElementById('btnImportLib').onclick=()=>document.getElementById('impLibFile').click();
-document.getElementById('impLibFile').onchange=async(e)=>{
+/* 恢复 = 单一入口，按文件内容自动识别三种，不需要用户先想清楚点哪个：
+   · 完整备份（含 library.books）→ 书单 + 豆瓣评分 + 我的评分 + 进度 + 笔记，一次全还原
+   · 书单数据（只含 books）      → 只换书单（带评分/简介/出版社）
+   · 个人标记（只含 state）      → 只把评分/进度/笔记合并回当前书单
+   以前「恢复」和「导入书库」是两个按钮，语义太像，已合并成一个。 */
+async function restoreAny(file){
+  if(!file) return;
+  if(file.size>60*1024*1024){ toast('文件超过 60MB，已拒绝'); return; }
+  let d=null;
+  try{ d=JSON.parse(await file.text()); }
+  catch(e){ toast('不是有效的 JSON 文件'); return; }
+
+  const full = !!(d && d.library && Array.isArray(d.library.books));
+  const libSrc = full ? d.library : (d && Array.isArray(d.books) ? d : null);
+  const st = (d && d.state && typeof d.state==='object') ? d.state : null;
+  if(!libSrc && !st){
+    toast('认不出这个文件：既没有书单（books），也没有评分笔记（state）'); return;
+  }
+  const notes = (d && d.notes && typeof d.notes==='object') ? d.notes
+              : (st && st.note && typeof st.note==='object' ? st.note : {});
+  const nBook = libSrc ? (libSrc.books||[]).length : 0;
+  const nScan = libSrc ? (libSrc.scansets||[]).length : 0;
+  const nRate = st ? Object.keys(st.rating||{}).length : 0;
+  const nPage = st ? Object.keys(st.page||{}).length : 0;
+  const nNote = Object.keys(notes||{}).length;
+
+  let msg='';
+  if(full){
+    msg = '这是「完整备份」，书单和个人数据一起还原。\n\n'
+        + `书单：${nBook} 本书 + ${nScan} 个图册（会覆盖当前 ${ALL.length} 条）\n`
+        + `我的评分：${nRate} 个 · 阅读进度：${nPage} 条 · 笔记：${nNote} 条\n\n`
+        + '确定 = 原样还原（当前书单被替换）\n取消 = 放弃';
+  }else if(libSrc){
+    msg = '这是「书单数据」，不含个人评分/笔记。\n\n'
+        + `书单：${nBook} 本书 + ${nScan} 个图册（会覆盖当前 ${ALL.length} 条）\n\n`
+        + '确定 = 换成这份书单（你已有的评分/笔记按书名保留）\n取消 = 放弃';
+  }else{
+    msg = '这是「个人标记备份」，不含书单。\n\n'
+        + `我的评分：${nRate} 个 · 阅读进度：${nPage} 条 · 笔记：${nNote} 条\n\n`
+        + '确定 = 合并到当前书单（本机独有保留，冲突以备份为准）\n取消 = 放弃';
+  }
+  if(!confirm(msg)){ toast('已取消'); return; }
+
+  if(libSrc){
+    const cards=(libSrc.books||[]).map(normalizeCard);
+    const scans=(libSrc.scansets||[]).map(normalizeCard);
+    const src = full ? 'restore' : 'import';
+    replaceLibrary(cards,scans,src);
+    await persistLibrary(cards,scans,src);
+    // 整库替换后，上一条书单的「同步判定已删」结论对新书单毫无意义
+    state.autoHidden={};
+  }
+  const r = st ? await mergeStateBundle(st,notes) : {note:0,rate:0,page:0,link:0,unknown:0};
+  renderCats(); render(); updateStoreBadge(); updateSyncInfo();
+  if(full){
+    toast(`已还原：${ALL.length} 条书单 · ${r.rate} 个评分 · ${r.note} 条笔记`);
+  }else if(libSrc){
+    toast(`已载入书单 ${ALL.length} 条`);
+  }else{
+    toast(`已合并：${r.rate} 个评分 · ${r.note} 条笔记 · ${r.page} 条进度`);
+  }
+}
+document.getElementById('btnImport').onclick=()=>document.getElementById('impFile').click();
+document.getElementById('impFile').onchange=async(e)=>{
   const f=e.target.files&&e.target.files[0];
   e.target.value='';
-  await importLibraryData(f);
+  await restoreAny(f);
 };
 
 /* 文件名主干（小写、去扩展名）——用于判断「是不是同一本书被搬走了」 */
@@ -1679,7 +1987,7 @@ function movedRel(b){
 function topDir(rel){ const p=normr(rel||'').split('/').filter(Boolean); return p.length>1?p[0]:''; }
 function updateSyncInfo(){
   const el=document.getElementById('syncInfo');
-  if(!SYNC){ el.innerHTML='点右上「同步书库」，只读扫描你选的文件夹，自动隐藏本地已删的书。'; return; }
+  if(!SYNC){ el.innerHTML='点右上「同步本地书库」，只读扫描你选的文件夹，自动隐藏本地已删的书。'; return; }
   let nG=(SYNC.gone||[]).length, nLost=0;
   ALL.forEach(b=>{ if(missCount(b)>0) nLost++; });
   const nN=(SYNC.neu||[]).length;
@@ -1739,6 +2047,10 @@ function openAmb(){
   });
 }
 async function doSync(){
+  // 只有「本机成品（embedded）」才有可比对的扫描历史，才适合增量同步。
+  // 示例 / 前端扫描 / 导入 / 备份还原 这几种来源都是外部给的书单，
+  // 跟本地文件夹没有对应关系，增量会把整批书判成「已删」，新书也进不来 → 一律全量重扫。
+  if(DS && LIB_SOURCE!=='embedded'){ return scanFromPicker(); }
   if(!('showDirectoryPicker' in window)){ return legacyPick(); }
   const h=await pickDir();
   if(!h) return;
@@ -1782,8 +2094,8 @@ function legacyPick(){
                        mtime:Math.floor((f.lastModified||0)/1000)});
       }
     }
-    // 在线版（示例/前端扫描）：没有内嵌真实书单，直接从零生成书卡
-    if(DS && (LIB_SOURCE==='demo'||LIB_SOURCE==='scan')){
+    // 非本机成品（示例/前端扫描/导入/备份还原）：没有内嵌真实书单，直接从零生成书卡
+    if(DS && LIB_SOURCE!=='embedded'){
       await applyScanResult(DS.buildCards(scanList));
       return;
     }
@@ -1914,12 +2226,28 @@ function starsHtml(sk,val,cls){
   return h+'</span>';
 }
 
-/* ---------- 分类栏 ---------- */
+/* ---------- 分类栏 ----------
+   固定题材顺序：文学 / 科幻 / 推理是小说类排最前，其后人文社科、心智成长、
+   艺术、实用、科普依次相邻；「待归类 / 未分类」永远沉底。
+   不再按藏书数量排（数量一变顺序就跳，看不出逻辑）。 */
+const CAT_ORDER=[
+  '文学·小说','科幻·奇幻','推理·悬疑',
+  '历史·地理','心理·认知·思维','社会·纪实·新闻',
+  '设计·艺术·摄影','传记·回忆录·口述','政治·哲学·军事',
+  '个人成长·方法论','商业·经济·管理','科学·技术·自然'
+];
+const isJunkCat=c=>/^(待归类|未分类)/.test(c||'');
+function catRank(c){
+  if(isJunkCat(c)) return 9000;
+  const i=CAT_ORDER.indexOf(c);
+  return i<0 ? 1000 : i;                 // 没列进表的新分类：排在已知分类后、待归类前
+}
 let catCount={}, catNames=[];
 function rebuildCats(){
   catCount={};
   ALL.forEach(b=>{const c=effCat(b);catCount[c]=(catCount[c]||0)+1;});
-  catNames=Object.keys(catCount).sort((a,b)=>catCount[b]-catCount[a]);
+  catNames=Object.keys(catCount).sort((a,b)=>
+    catRank(a)-catRank(b) || catCount[b]-catCount[a] || a.localeCompare(b,'zh-CN'));
   fillBulkCat();
 }
 function fillBulkCat(){
@@ -1951,7 +2279,6 @@ function filtered(){
     if(F.tag && !state.tag[b.sk]) return false;
     if(F.myRate && !(myRate(b.sk)>0)) return false;
     if(F.reading){ const p=pagePct(b); if(!(p>0 && p<100)) return false; }
-    if(F.finished){ const p=pagePct(b); if(!(p>=100)) return false; }
     if(F.notes && !hasNote(b.sk)) return false;
     if(F.noRate && (b.kind==='scanset' || b.rating)) return false;
     if(F.suspect && !b.suspect) return false;
@@ -2021,7 +2348,7 @@ function render(){
     if(overPct) pgCls='over';
     h+=`<div class="card ${sel.has(b.sk)?'sel':''} ${dupN>1?'dup':''} ${hidden?'gone':''}" data-id="${b.id}">
       <input class="pick" type="checkbox" ${sel.has(b.sk)?'checked':''} data-pick="${esc(b.sk)}">
-      <div class="rating" style="color:${rateColor(rt)};background:${rt?'#fafbfc':'#f4f5f7'}" title="${rt?`豆瓣 ${rt.toFixed(1)} 分 · ${votes} 人评价`:'豆瓣无评分'}">${rt?rt.toFixed(1):'—'}<small class="lbl">豆瓣</small>${votes?`<small class="vt">${votes}人评</small>`:''}</div>
+      <div class="rating" style="color:${rateColor(rt)};background:var(--paper2)" title="${rt?`豆瓣 ${rt.toFixed(1)} 分 · ${votes} 人评价`:'豆瓣无评分'}">${rt?rt.toFixed(1):'—'}<small class="lbl">豆瓣</small>${votes?`<small class="vt">${votes}人评</small>`:''}</div>
       <div class="body">
         <div class="nm">${nmHtml}</div>
         <div>
@@ -2035,7 +2362,7 @@ function render(){
           ${b.suspect?'<span class="chip warn">待核实</span>':''}
           ${partN?`<span class="chip warn">缺 ${partN} 份</span>`:''}
           ${mvRel?`<span class="chip moved" title="${esc(mvHint)}">已移动</span>`:''}
-          ${dirHint?`<span class="chip" title="${esc(mvHint)}" style="background:#fff7e6;color:#a15c00">${esc(dirHint)}</span>`:''}
+          ${dirHint?`<span class="chip" title="${esc(mvHint)}" style="background:var(--warn-soft);color:var(--warn);border-color:var(--warn-line)">${esc(dirHint)}</span>`:''}
           ${hidden?`<span class="chip del">${state.autoHidden[b.sk]?'本地已删':'已隐藏'}</span>`:''}
         </div>
         ${ol?`<div class="oneline">${esc(ol)}</div>`:''}
@@ -2272,7 +2599,7 @@ function initDrawer(){
     let path='/';
     try{ path=new URL(u).pathname+new URL(u).search; }catch(e){}
     location.href='mubu://'+path.replace(/^\//,'');
-    setTimeout(()=>{ if(document.hasFocus()) toast('没检测到幕布客户端，改用浏览器打开'); },1600);
+    setTimeout(()=>{ if(document.hasFocus()) toast('没检测到客户端，改用浏览器打开'); },1600);
   };
   document.getElementById('dClose').onclick=closeDrawer;
   document.getElementById('scrim').onclick=closeDrawer;
@@ -2309,45 +2636,49 @@ function dl(name,text,type){
   const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=name;
   document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(u),1000);
 }
+/* 导出「我的阅读清单」：给 LLM 做阅读分析 / 个性化推荐用
+   格式约定（刻意保持极简，省 token、好解析）：
+     ## 分类名 · N 本         ← 分类只出现一次（分组表头）
+     [0001] 作者 · 书名
+     豆瓣 9.6 | 我的评分：5 星 | 我的评价：……   ← 没有评价就整段消失
+   不带本地路径（对分析无用，且属于隐私信息）。 */
 function exportNote(){
-  const rows=ALL.filter(b=>!isHidden(b) && (state.tag[b.sk]||hasNote(b.sk)||myRate(b.sk)>0||pageRead(b)>0||sel.has(b.sk)));
+  const rows=ALL.filter(b=>!isHidden(b) && (effRead(b)||state.tag[b.sk]||hasNote(b.sk)||myRate(b.sk)>0||pageRead(b)>0||sel.has(b.sk)));
   if(!rows.length){ toast('还没有笔记/评分/进度，也未选中任何书'); return; }
   const d=new Date(), ds=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
-  let t=`本地书库管理 · 我的阅读清单\n生成时间 ${d.toLocaleString('zh-CN')}\n共 ${rows.length} 条（仅供本人参考，工具不会删除任何文件）\n`;
-  t+='='.repeat(70)+'\n\n';
-  rows.forEach((b,i)=>{
-    const u=pageUnit(b), pt=pageTotal(b), pr=pageRead(b), pct=pagePct(b);
-    t+=`[${String(i+1).padStart(4,'0')}] ${dispName(b)}\n`;
-    t+=`      分类 ${effCat(b)} | 豆瓣 ${b.rating?b.rating.toFixed(1):'无'} | 我的 ${myRate(b.sk)?myRate(b.sk)+' 星':'—'} | ${human(effSize(b))}\n`;
-    if(pt||pr) t+=`      进度 ${pr||0} / ${pt||'?'} ${u}${pct!=null?`（${pct.toFixed(1)}%）`:''}\n`;
-    if(b.douban&&b.douban.publisher) t+=`      出版社 ${b.douban.publisher}\n`;
-    if(state.tag[b.sk]) t+=`      标签 ${state.tag[b.sk]}\n`;
-    if(state.link[b.sk]) t+=`      幕布 ${state.link[b.sk]}\n`;
-    const nt=noteText(b.sk);
-    if(nt) t+=`      笔记 ${nt.replace(/\n/g,'\n           ')}\n`;
-    (b.files||[]).forEach(f=>{ t+=`      · ${human(f.size)}  ${f.rel}\n`; });
-    if(b.kind==='scanset') t+=`      · ${b.pages} 页图  ${b.rel}\n`;
-    if(b.suspect) t+=`      · ⚠ 豆瓣待核实 ${(b.douban&&b.douban.url)||''}\n`;
-    t+='\n';
-  });
-  dl(`我的书库阅读清单_${ds}.txt`,t);
 
-  const q=s=>`"${String(s==null?'':s).replace(/"/g,'""')}"`;
-  const csv=['书名,作者,分类,豆瓣评分,评价人数,我的评分,已读页数,总页数,进度%,出版社,体积MB,标签,幕布链接,笔记,相对路径'];
+  // 按分类分组；分组顺序沿用侧栏的固定题材顺序，组内保持书单原顺序
+  const groups=new Map();
   rows.forEach(b=>{
-    const p=(b.files&&b.files[0])?b.files[0].rel:(b.rel||'');
-    const pt=pageTotal(b), pr=pageRead(b), pct=pagePct(b);
-    csv.push([
-      q(dispName(b)), q(b.author), q(effCat(b)), b.rating||'', b.votes||'',
-      myRate(b.sk)||'', pr||'', pt||'', pct!=null?pct.toFixed(1):'',
-      q((b.douban&&b.douban.publisher)||''),
-      (effSize(b)/1048576).toFixed(1),
-      q(state.tag[b.sk]||''), q(state.link[b.sk]||''),
-      q(noteText(b.sk).replace(/\r?\n/g,' ⏎ ')), q(p),
-    ].join(','));
+    const c=effCat(b)||'未分类';
+    if(!groups.has(c)) groups.set(c,[]);
+    groups.get(c).push(b);
   });
-  dl(`我的书库阅读清单_${ds}.csv`,'\ufeff'+csv.join('\r\n'),'text/csv;charset=utf-8');
-  toast('已导出阅读清单（CSV 带 BOM，Excel 直接打开不乱码）');
+  // 分组顺序与侧栏一致；「待归类 / 未分类」永远排最后（对分析没有信息量）
+  const order=[...groups.keys()].sort((a,b)=>
+    catRank(a)-catRank(b) || groups.get(b).length-groups.get(a).length);
+
+  const line=b=>{
+    const rate=myRate(b.sk);
+    let s=`豆瓣 ${b.rating?b.rating.toFixed(1):'无'} | 我的评分：${rate?rate+' 星':'—'}`;
+    const nt=noteText(b.sk).trim();
+    if(nt) s+=` | 我的评价：${nt.replace(/\r?\n/g,'\n    ')}`;
+    return s;
+  };
+
+  let t=`本地书库管理 · 我的阅读清单\n生成时间 ${d.toLocaleString('zh-CN')}\n共 ${rows.length} 条 · ${order.length} 个分类（仅供本人参考，工具不会删除任何文件）\n`;
+  t+='='.repeat(70)+'\n';
+  let n=0;
+  order.forEach(c=>{
+    const list=groups.get(c);
+    t+=`## ${c} · ${list.length} 本\n\n`;
+    list.forEach(b=>{
+      n++;
+      t+=`[${String(n).padStart(4,'0')}] ${dispName(b)}\n${line(b)}\n\n`;
+    });
+  });
+  dl(`我的阅读清单_${ds}.txt`,t);
+  toast(`已导出「我的阅读清单_${ds}.txt」→ 浏览器「下载」文件夹`);
 }
 
 /* ---------- 备份 / 恢复 ---------- */
@@ -2356,44 +2687,70 @@ function dateStamp(){
   return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
 }
 async function exportBackup(){
+  const name=`书库备份_完整_${dateStamp()}_v4.json`;
+  // 优先弹「另存为」，让用户自己挑文件夹（Chrome / Edge 支持）；
+  // 不支持或用户环境不允许时，退回浏览器默认「下载」文件夹。
+  let handle=null;
+  if(window.showSaveFilePicker){
+    try{
+      handle=await window.showSaveFilePicker({
+        suggestedName:name,
+        types:[{description:'书库完整备份（JSON）', accept:{'application/json':['.json']}}]
+      });
+    }catch(e){
+      if(e && e.name==='AbortError'){ toast('已取消备份'); return; }
+      handle=null;
+    }
+  }
   if(noteDirty){ noteDirty=false; clearTimeout(noteT); }
   await flushNotesNow();
   const notes={};
   NOTES.forEach((v,k)=>{ if(v&&v.text) notes[k]={text:v.text, up:v.up||0}; });
+  // 完整备份 = 书单（含豆瓣评分/出版社）+ 个人数据（我的评分/进度/标签/笔记）
+  // 单这一份文件就能在别的电脑/浏览器上原样还原，不需要重新扫文件夹。
   const pack={
     kind:'ebooklib_library_backup',
-    schema:3,
+    schema:4,
     exported_at:new Date().toISOString(),
-    app:{ generated_at:DB.generated_at||'', books:BOOKS.length, scansets:SCANS.length },
+    app:{ generated_at:DB.generated_at||'', books:BOOKS.length, scansets:SCANS.length, source:LIB_SOURCE },
+    library:{
+      generated_at:DB.generated_at||'',
+      stats:DB.stats||{},
+      meta:DB.meta||{},
+      books:BOOKS,
+      scansets:SCANS,
+    },
     state:Object.assign({},state,{note:{}}),
     notes,
   };
-  dl(`书库备份_${dateStamp()}_v3.json`,JSON.stringify(pack,null,1),'application/json');
-  const kb=(JSON.stringify(pack).length/1024).toFixed(0);
-  toast(`已备份：${Object.keys(notes).length} 条笔记 · ${Object.keys(pack.state.rating).length} 个评分 · 约 ${kb}KB`);
+  const text=JSON.stringify(pack,null,1);
+  const mb=text.length/1048576;
+  const nRate=Object.keys(pack.state.rating||{}).length;
+  const nNote=Object.keys(notes).length;
+  const brief=`${BOOKS.length} 本书 + ${SCANS.length} 个图册 · ${nRate} 个我的评分 · ${nNote} 条笔记`;
+  try{
+    if(handle){
+      const w=await handle.createWritable();
+      await w.write(text); await w.close();
+      toast(`已备份到「${handle.name}」：${brief}`);
+    }else{
+      dl(name,text,'application/json');
+      toast(`已备份：${brief}（${mb.toFixed(1)}MB）· 存到浏览器「下载」文件夹`);
+    }
+  }catch(e){
+    toast('备份写入失败：'+((e&&e.message)||e));
+  }
 }
-async function importBackup(file){
-  if(!file) return;
-  if(file.size>25*1024*1024){ toast('文件过大，疑似不是备份文件'); return; }
-  let data=null;
-  try{ data=JSON.parse(await file.text()); }
-  catch(e){ toast('不是合法的 JSON 备份'); return; }
-
-  const st = (data && data.state) ? data.state : data;      // 兼容裸 v2 状态
-  if(!st || typeof st!=='object'){ toast('备份里没有状态数据'); return; }
-
-  // 笔记：v3 包用 data.notes；裸 v2 用 st.note
-  let incNotes={};
-  if(data && data.notes && typeof data.notes==='object') incNotes=data.notes;
-  else Object.entries(st.note||{}).forEach(([sk,t])=>{ if(typeof t==='string'&&t.trim()) incNotes[sk]={text:t,up:0}; });
-
-  const nNote=Object.keys(incNotes).length;
-  const mode = confirm(
-    `准备导入：${nNote} 条笔记 · ${Object.keys(st.rating||{}).length} 个我的评分 · ${Object.keys(st.page||{}).length} 条进度。\n\n`
-    +`点「确定」= 合并（保留本机独有，冲突按备份为准）\n点「取消」= 放弃导入`);
-  if(!mode){ toast('已取消'); return; }
-
+/* 把备份里的评分/进度/笔记/标签合并进当前 state —— 只动个人数据，不碰书单 */
+async function mergeStateBundle(st, notes){
   let addNote=0, addRate=0, addPage=0, addLink=0, badLink=0, unknown=0;
+  let incNotes=notes||{};
+  // 兼容裸 v2 状态：笔记是以字符串存在 state.note 里
+  if(!Object.keys(incNotes).length && st.note && typeof st.note==='object'){
+    const tmp={};
+    Object.entries(st.note).forEach(([sk,t])=>{ if(typeof t==='string'&&t.trim()) tmp[sk]={text:t,up:0}; });
+    incNotes=tmp;
+  }
   Object.entries(incNotes).forEach(([sk,v])=>{
     const t=(v&&typeof v==='object')?String(v.text||''):String(v||'');
     if(!t.trim()) return;
@@ -2418,14 +2775,10 @@ async function importBackup(file){
   ['read','tag','fmt','cat','hidden'].forEach(k=>{
     Object.entries(st[k]||{}).forEach(([sk,v])=>{ state[k][sk]=v; });
   });
-
   rebuildNoteIndex();
   await flushNotesNow();
   state.__v=3; saveNow();
-  renderCats(); render();
-  toast(`导入完成：笔记 ${addNote} · 评分 ${addRate} · 进度 ${addPage} · 链接 ${addLink}`
-        + (badLink?` · 丢弃非法链接 ${badLink}`:'') + (unknown?` · ${unknown} 条属其他版本书库`:''));
-  updateStoreBadge();
+  return {note:addNote, rate:addRate, page:addPage, link:addLink, unknown, badLink};
 }
 
 /* ---------- 事件 ---------- */
@@ -2439,7 +2792,6 @@ document.getElementById('fScan').onchange=e=>{F.scan=e.target.checked;render();}
 document.getElementById('fTag').onchange=e=>{F.tag=e.target.checked;render();};
 document.getElementById('fMyRate').onchange=e=>{F.myRate=e.target.checked;render();};
 document.getElementById('fReading').onchange=e=>{F.reading=e.target.checked;render();};
-document.getElementById('fFinished').onchange=e=>{F.finished=e.target.checked;render();};
 document.getElementById('fNotes').onchange=e=>{F.notes=e.target.checked;render();};
 document.getElementById('fNoRate').onchange=e=>{F.noRate=e.target.checked;render();};
 document.getElementById('fSuspect').onchange=e=>{F.suspect=e.target.checked;render();};
@@ -2459,12 +2811,6 @@ document.getElementById('selAll').onclick=()=>{ filtered().forEach(b=>sel.add(b.
 document.getElementById('selNone').onclick=()=>{ sel.clear(); render(); };
 document.getElementById('btnNote').onclick=exportNote;
 document.getElementById('btnState').onclick=exportBackup;
-document.getElementById('btnImport').onclick=()=>document.getElementById('impFile').click();
-document.getElementById('impFile').onchange=async(e)=>{
-  const f=e.target.files&&e.target.files[0];
-  e.target.value='';
-  await importBackup(f);
-};
 document.getElementById('btnSync').onclick=doSync;
 
 /* ---------- 数据体检 ----------
@@ -2556,7 +2902,7 @@ function openHealth(){
     <div class="row">
       <button class="btn" id="hApply">应用恢复码</button>
       <button class="btn" id="hImport">恢复（选备份文件）</button>
-      <button class="btn" id="hExport">备份（导出 JSON）</button>
+      <button class="btn" id="hExport">完整备份（含书单）</button>
     </div>`;
   document.getElementById('hScrim').classList.add('show');
   document.getElementById('hModal').classList.add('show');
@@ -2598,6 +2944,7 @@ document.getElementById('btnCat').onclick=()=>{
   const legacyPairs=migrateLegacySk();
   if(legacyPairs.length){ try{ await migrateKeys(legacyPairs); }catch(e){} }
   await resolveLibrary();                       // URL > 本机已存书单 > 内嵌示例
+  fillFromPack();                               // 内置评分包：给没豆瓣分的书补上（幂等）
   updateStoreBadge();
   // 先无条件渲染一次：IndexedDB 慢或被禁用（隐私模式/某些 file:// 环境）时页面不能白屏
   renderCats(); render();
@@ -2609,7 +2956,10 @@ document.getElementById('btnCat').onclick=()=>{
       {rel:'测试书库/文学/测试·山居札记 - 测试作者.epub',name:'测试·山居札记 - 测试作者.epub',ext:'.epub',size:430080,mtime:0},
       {rel:'测试书库/科幻/测试·星轨之外.azw3',name:'测试·星轨之外.azw3',ext:'.azw3',size:512000,mtime:0},
       {rel:'测试书库/历史/测试·江岸旧事.第1卷.pdf',name:'测试·江岸旧事.第1卷.pdf',ext:'.pdf',size:2400000,mtime:0},
-      {rel:'测试书库/历史/测试·江岸旧事.第2卷.pdf',name:'测试·江岸旧事.第2卷.pdf',ext:'.pdf',size:2300000,mtime:0}
+      {rel:'测试书库/历史/测试·江岸旧事.第2卷.pdf',name:'测试·江岸旧事.第2卷.pdf',ext:'.pdf',size:2300000,mtime:0},
+      // 这两本收录在内置豆瓣评分包里，用来验收「扫描后自动补分」
+      {rel:'测试书库/文学/余华《活着》.epub',name:'余华《活着》.epub',ext:'.epub',size:480000,mtime:0},
+      {rel:'测试书库/推理/东野圭吾《白夜行》.mobi',name:'东野圭吾《白夜行》.mobi',ext:'.mobi',size:1600000,mtime:0}
     ];
     await applyScanResult(DS.buildCards(mock));
   }

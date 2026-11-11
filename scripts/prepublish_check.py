@@ -105,8 +105,8 @@ PATH_BLOCK_GLOBS = [
     ".env", ".env.*", ".netrc", ".npmrc", "id_rsa", "id_rsa.pub",
     "*.pem", "*.key", "credentials*.json",
 ]
-# 明确允许出现在公开仓库的 HTML（Pages 页面）
-PATH_ALLOW_HTML = {"docs/index.html"}
+# 明确允许出现在公开仓库的 HTML（Pages 页面 / 构建模板，非导出成品）
+PATH_ALLOW_HTML = {"docs/index.html", "scripts/app_template.html"}
 
 TEXT_EXT = {".py", ".js", ".json", ".md", ".html", ".bat", ".txt", ".gitignore",
             ".yml", ".yaml", ".toml", ".cfg", ".ini", ".sh", ".css", ""}
@@ -161,10 +161,43 @@ def load_rules():
     return rules
 
 
+def _glob_to_re(pat: str) -> "re.Pattern":
+    """把 .gitignore 通配符转成正则：`*` 不跨 `/`，`**` 跨层级，与 git 语义一致。"""
+    out, i, n = [], 0, len(pat)
+    while i < n:
+        c = pat[i]
+        if c == "*":
+            if pat.startswith("**", i):
+                out.append(".*")
+                i += 2
+                continue
+            out.append("[^/]*")
+            i += 1
+            continue
+        if c == "?":
+            out.append("[^/]")
+            i += 1
+            continue
+        if c == "[":
+            j = pat.find("]", i + 1)
+            if j > 0:
+                out.append(pat[i:j + 1])
+                i = j + 1
+                continue
+        out.append(re.escape(c))
+        i += 1
+    return re.compile("".join(out) + r"\Z")
+
+
 def match_rule(rule, rel: str) -> bool:
     pat, parts = rule["pat"], rel.split("/")
     if rule["scoped"]:
-        if fnmatch.fnmatchcase(rel, pat):
+        rx = rule.get("_rx")
+        if rx is None:
+            rx = rule["_rx"] = _glob_to_re(pat)
+        if rx.match(rel):
+            return True
+        if rule["dir_only"] and rel.rstrip("/") == pat:
             return True
         return rule["dir_only"] and rel.startswith(pat + "/")
     # 无斜杠规则：匹配任意层级的段名
@@ -186,6 +219,10 @@ def simulate_add(rules):
         keep = []
         for d in sorted(dirnames):
             rel = os.path.relpath(os.path.join(dirpath, d), ROOT).replace("\\", "/")
+            if os.path.isdir(os.path.join(dirpath, d, ".git")):
+                # 嵌套的独立仓库：git 只记录 gitlink，不跟踪其内部文件
+                ignored.append(rel + "/ (嵌套仓库)")
+                continue
             if is_ignored(rel + "/", rules) or is_ignored(rel, rules):
                 ignored.append(rel + "/")
             else:
@@ -209,7 +246,8 @@ def git_crosscheck(tracked):
             notes.append("当前不是 git 仓库，按 .gitignore 模拟跟踪集合（符合「只准备到可发布状态」）")
             return
         out = subprocess.run(
-            ["git", "ls-files", "--cached", "--others", "--exclude-standard"],
+            ["git", "-c", "core.quotepath=false",
+             "ls-files", "--cached", "--others", "--exclude-standard"],
             cwd=ROOT, capture_output=True, text=True, timeout=20)
         if out.returncode != 0:
             warn("跟踪集合", "git ls-files 执行失败，仅用模拟结果：" + out.stderr.strip()[:120])
@@ -352,6 +390,45 @@ def read_text(rel):
         return None
 
 
+# 内置豆瓣评分包 = 豆瓣 Top250 + 二十个大类高分榜，纯公开书目数据。
+# 它和本地书单必然有重合（都收名著畅销书），这种重合不是隐私泄漏，
+# 交叉比对前整块剔除；但评分包本身另有 check_douban_pack 的字段白名单把关。
+_PACK_BLOCK_RE = re.compile(r'<script id="DOUBAN_PACK"[^>]*>.*?</script>', re.S)
+
+
+def strip_public_pack(text):
+    return _PACK_BLOCK_RE.sub('<script id="DOUBAN_PACK"></script>', text)
+
+
+PACK_PATH = os.path.join(ROOT, "scripts", "douban_pack.json")
+PACK_ALLOWED_KEYS = {"t", "a", "r", "v", "i"}
+
+
+def check_douban_pack():
+    """评分包只允许 书名/作者/评分/评价人数/豆瓣id 五个字段，不许夹带私货。"""
+    if not os.path.exists(PACK_PATH):
+        return
+    try:
+        with io.open(PACK_PATH, "r", encoding="utf-8") as f:
+            d = json.load(f)
+    except Exception as e:
+        err("评分包", "无法解析 scripts/douban_pack.json：" + str(e)[:80])
+        return
+    items = d.get("items") or []
+    if not items:
+        warn("评分包", "douban_pack.json 里没有条目")
+        return
+    extra = [k for it in items for k in it if k not in PACK_ALLOWED_KEYS]
+    if extra:
+        err("评分包", "出现非公开字段：%s" % "、".join(sorted(set(extra))[:6]))
+    blob = json.dumps(items, ensure_ascii=False)
+    if re.search(r"[A-Za-z]:[\\/](?![\\/])", blob) or "/Users/" in blob or "/home/" in blob:
+        err("评分包", "含本地绝对路径")
+    if any(len(it.get("t") or "") > 120 for it in items):
+        err("评分包", "存在异常超长书名，疑似整段正文混入")
+    notes.append("内置评分包 %d 本，字段白名单校验通过" % len(items))
+
+
 def check_content(tracked, feats):
     hits = []
     scanned = 0
@@ -363,6 +440,7 @@ def check_content(tracked, feats):
         text = read_text(rel)
         if text is None:
             continue
+        text = strip_public_pack(text)
         scanned += 1
         for label, lit in BAD_LITERALS:
             if lit in text:
@@ -384,7 +462,9 @@ def check_content(tracked, feats):
                 if key in text:
                     line = text[:text.index(key)].count("\n") + 1
                     hits.append((rel, line, "含个人状态备份键 " + key[:24]))
-        # 真实书单交叉比对
+        # 真实书单交叉比对（评分包是公开榜单，另有字段白名单把关，不参与指纹比对）
+        if rel.replace("\\", "/") == "scripts/douban_pack.json":
+            continue
         for key, group in buckets.items():
             if key not in text:
                 continue
@@ -562,6 +642,7 @@ def main():
     check_ignore_rules(ignored, rules)
     check_paths(tracked)
     check_content(tracked, feats)
+    check_douban_pack()
     check_public_html()
     check_docs()
     check_readonly()

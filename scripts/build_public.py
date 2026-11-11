@@ -13,6 +13,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TMPL = os.path.join(ROOT, "scripts", "app_template.html")
 SCAN = os.path.join(ROOT, "scripts", "scan_core.js")
 DEMO = os.path.join(ROOT, "scripts", "demo_library.json")
+PACK = os.path.join(ROOT, "scripts", "douban_pack.json")
 DOCS = os.path.join(ROOT, "docs")
 OUT = os.path.join(DOCS, "index.html")
 
@@ -49,11 +50,22 @@ def main():
         html = f.read()
     with open(SCAN, "r", encoding="utf-8") as f:
         scan_js = f.read().replace("</", "<\\/")
-    html = html.replace("__LIBRARY_DATA__", payload).replace("__SCAN_JS__", scan_js)
+    pack_js, pack_n = '{"items":[]}', 0
+    if os.path.exists(PACK):
+        with open(PACK, "r", encoding="utf-8") as f:
+            pack_js = f.read().replace("</", "<\\/")
+        try:
+            pack_n = len(json.loads(pack_js).get("items") or [])
+        except Exception:
+            pack_n = 0
+    html = (html.replace("__LIBRARY_DATA__", payload)
+                .replace("__DOUBAN_PACK__", pack_js)
+                .replace("__SCAN_JS__", scan_js))
 
     for bad in BAD[:4]:
         assert bad not in html, "成品页面含禁止特征：" + repr(bad)
-    assert "__LIBRARY_DATA__" not in html and "__SCAN_JS__" not in html, "占位符未替换"
+    for ph in ("__LIBRARY_DATA__", "__DOUBAN_PACK__", "__SCAN_JS__"):
+        assert ph not in html, "占位符未替换：" + ph
 
     os.makedirs(DOCS, exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
@@ -67,6 +79,7 @@ def main():
     print("公开版页面已生成")
     print(f"  示例条目    {len(books)} 本 / {len(scans)} 图册")
     print(f"  前端扫描    {'已注入' if scan_js else '未注入'}")
+    print(f"  评分包      {pack_n} 本内嵌（无豆瓣数据时自动补分）")
     print("  隐私断言    0 处泄漏")
     print(f"  输出        {OUT}")
     print("=" * 56)
