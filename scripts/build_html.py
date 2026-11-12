@@ -69,7 +69,7 @@ def is_famous(author, famous):
 MARKETING = re.compile(r"^(【[^】]{0,10}】|\[[^\]]{0,10}\]|◎|★|※|☆|▲|\||-|\s)+")
 
 
-def short_intro(intro, n=78):
+def short_intro(intro, n=400):
     if not intro:
         return ""
     s = re.sub(r"\s+", " ", intro).strip()
@@ -325,6 +325,11 @@ def main():
     if os.path.exists(exactdup_path):
         with open(exactdup_path, "r", encoding="utf-8") as f:
             exactdup_js = f.read().replace("</", "<\\/")
+    readingmerge_path = os.path.join(ROOT, "scripts", "readingmerge.js")
+    readingmerge_js = ""
+    if os.path.exists(readingmerge_path):
+        with open(readingmerge_path, "r", encoding="utf-8") as f:
+            readingmerge_js = f.read().replace("</", "<\\/")
     pack_path = os.path.join(ROOT, "scripts", "douban_pack.json")
     pack_js = '{"items":[]}'
     pack_n = 0
@@ -338,7 +343,8 @@ def main():
     html = (tpl.replace("__LIBRARY_DATA__", payload)
                .replace("__DOUBAN_PACK__", pack_js)
                .replace("__SCAN_JS__", scan_js)
-               .replace("__EXACTDUP_JS__", exactdup_js))
+               .replace("__EXACTDUP_JS__", exactdup_js)
+               .replace("__READINGMERGE_JS__", readingmerge_js))
     out = out_path()
     with open(out, "w", encoding="utf-8") as f:
         f.write(html)

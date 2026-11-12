@@ -24,10 +24,10 @@
 - Copy selected titles and paste them into an AI to find similar books or reading sources
 - Export a compact reading list (title · author · Douban score · my rating · my note) for personalised AI recommendations
 - Rate books, track pages, keep notes and external links, mark books read
-- See duplicate copies side by side (the **Duplicates & Cleanup** button sits in the bottom-right corner), tick the ones to remove and delete them in one batch
+- See duplicate copies side by side (open **Library tools → Duplicates & cleanup** in the top bar), tick the ones to remove and delete them in one batch
 - Full backup / restore moves your list, ratings and notes to another browser or computer
 
-**Privacy & safety** — scanning and syncing are strictly read-only and the file list is never uploaded. Deletion is opt-in only: nothing is pre-selected, every full path is shown in bold and listed before you confirm, files are copied into a restorable `.ebooklib-trash` folder before the originals are removed, and the last batch can be restored. The cleanup page shows exactly where the quarantine folder is; one click copies that path so you can paste it into File Explorer's address bar and open it directly.
+**Privacy & safety** — scanning and syncing are strictly read-only and the file list is never uploaded. Deletion is opt-in only: nothing is pre-selected, every full path is shown in bold and listed before you confirm, files are copied into an `.ebooklib-trash` folder before the originals are removed. A removed entry is gone from the list for good — the page keeps no deletion history or restore record. The cleanup page shows exactly where the quarantine folder is; one click copies that path so you can paste it into File Explorer's address bar and open it directly.
 
 The rest of this README is in Chinese; the interface itself is fully bilingual.
 
@@ -47,6 +47,23 @@ The rest of this README is in Chinese; the interface itself is fully bilingual.
    文件改名或挪了位置，评分和笔记自动跟上。全程只读，不动原文件。
 
 > 这三件事都不需要上传任何东西：复制和导出是你主动触发的本地动作，书库路径不出你的电脑。
+
+## 两个页面
+
+顶栏左上角是一个页面切换器，两个页面各管一件事，互不干扰：
+
+| 页面 | 管什么 | 分类体系 |
+|---|---|---|
+| **本地书库管理** | 扫描/同步本地目录得到的书单：查重、分类、评分、笔记、删除 | 13 个题材类（按目录与书名自动归类） |
+| **我的阅读清单** | 你在各种渠道读过的书：手动添加、文件导入、与本地已读自动汇入合并 | 一套独立的阅读分类 |
+
+两套分类严格隔离：给阅读清单改分类，不会动书库里的分类，反之亦然。阅读清单也不需要授权任何目录，纯浏览器存储。
+
+**导入**支持 TXT / CSV / TSV / JSON（拖进页面或点选择都可以）。TXT 每行一本「书名 · 作者」，也能认 `作者 - 书名`、带评分/评价后缀的行；CSV/JSON 会按表头或字段名取书名、作者、评分、评价、ISBN、来源。同一个文件重复导入不会产生重复记录（按内容指纹判重）。
+
+**合并**是三级优先：ISBN 相同 → 同一来源的同一条目 → 规范化书名 + 作者都一致。本地书库里已经标了「已读」的书，会自动出现在阅读清单里（标为「本地书库」来源），不需要你二次录入——本地删掉这本书，这条也随之消失。
+
+**导出**得到一份给 AI 用的纯文本清单：按分类分组，每本两行（`[0001] 作者 · 书名` + `评分 9.6 | 我的评分：5 星 | 我的评价：…`），没有评价就不出现那一段。刻意不带路径、进度、出版社，方便直接丢给 AI 做阅读分析与推荐。
 
 ## 界面预览
 
@@ -73,7 +90,7 @@ The rest of this README is in Chinese; the interface itself is fully bilingual.
   - **导出我的阅读清单**（TXT）：按分类分组，每本一行「书名 · 作者」+「豆瓣 / 我的评分 / 我的评价」（没写评价就不出现这一段）。刻意保持极简，方便直接丢给 AI（Claude / ChatGPT 等）做阅读分析和个性化推荐，不能拿来恢复书库
 - **扫描严格只读**：扫描、同步、脚本一律只读，绝不修改、移动或重命名书库里的任何文件
 - **中英界面**：顶栏「EN / 中」一键切换；在线版按浏览器语言自动选择。书名、作者、路径、笔记始终原样保留
-- **重复与可删除**：右下角蓝色入口；重名组左右并列，逐份标出书名 / 作者 / 大小 / 完整路径（路径深色加粗高亮），由你自己勾选要删的份（默认全不选、不代判）。
+- **重复与可删除**：顶栏「书库整理 → 重复与可删除」；重名组左右并列，逐份标出书名 / 作者 / 大小 / 完整路径（路径深色加粗高亮），由你自己勾选要删的份（默认全不选、不代判）。
   另有「**高度疑似完全重复**」组：同一本书在书名 / 作者 / 大小 / 格式完全一致、只是路径不同（不含文件内容哈希比对，依元数据判定）时归为一组，标「高度疑似完全重复 · 仅路径不同」；组内点「**保留此路径**」即把其余副本自动加入待删（仍可手动取消），不预选、不代你删、不替你决定保留哪一份。
   删除前二次确认并逐条列出路径，先复制进书库内 `.ebooklib-trash` 隔离目录（复制后会校验体积一致）再移除原文件；删除后即从书单彻底移除，不留恢复记录，隔离目录副本由你自己手动清空。
   页面顶部写明隔离目录的实际位置，**点一下路径即可复制**；浏览器读不到盘符，填一次「书库根目录」后复制的就是可粘贴到资源管理器地址栏、直接打开隔离文件夹的完整路径（填的内容只存你自己的浏览器）。删除完成后路径会自动带上本批次目录名
@@ -143,6 +160,7 @@ Windows 用户可直接双击根目录的 `重新生成清单.bat`（自动探�
 | 书单本身（扫描或导入的） | IndexedDB `ebooklib_sync_v1` · `kv['userLibrary']` |
 | 我的评分、阅读进度、已读 / 标签 / 分类覆写 / 隐藏 / 链接 | `localStorage['ebooklib_library_state_v3']` |
 | 笔记正文 | IndexedDB `ebooklib_sync_v1` · `notes` |
+| 我的阅读清单（手动条目 / 导入来源 / 合并结果） | `localStorage['ebooklib_reading_v1']` |
 
 - 全部只存**当前浏览器 + 当前地址**，不进任何数据文件，不进成品 HTML，不上传。
 - 同一个地址刷新页面，书单和评分都还在。切换书库来源只替换书单，个人数据一个键都不动。
@@ -180,6 +198,9 @@ scripts/
   app_template.html    单文件网页模板（原生 JS，无框架无构建）
   scan_core.js         前端从零扫描：文件名解析 / 分类 / 查重 / 分卷
   exactdup.js          高度疑似完全重复识别 + 路径合法性校验（纯逻辑，浏览器与 Node 单测共用）
+  readingmerge.js      阅读清单解析 / 三级合并 / 导出行生成（纯逻辑，浏览器与 Node 单测共用）
+  test_exactdup.js     查重逻辑单测（5040 条）
+  test_readingmerge.js 阅读清单逻辑单测（120 条）
   demo_library.json    脱敏示例书单（人工编造，不含真实数据）
   build_public.py      生成 docs/index.html，不读任何私有数据
   build_html.py        生成本地完整版 HTML

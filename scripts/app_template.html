@@ -18,6 +18,8 @@
   /* 主色：低饱和钴蓝，只用于文字与小面积强调 */
   --accent:#4056c8; --accent-deep:#33459f; --accent-soft:#eef1fd;
   --accent-tint:#f4f6fe; --accent-line:#d8ddf5; --accent-ink:#2f3f94;
+  /* 分段切换托盘：比纸面深一档，靠明度差把「这里是一组开关」框出来 */
+  --seg-bg:#dfe4f3; --seg-line:#c4cdec;
   /* 语义色：低饱和，只在需要区分时出场 */
   --dup:#b8473c; --dup-soft:#fdf3f2; --dup-line:#f0cac6;
   --keep:#0f6e73; --keep-soft:#eef7f7; --keep-line:#c3e0e2;
@@ -61,6 +63,47 @@ header{
 }
 .logo small{font-family:var(--sans);font-weight:400;color:var(--txt3);font-size:12px;margin-left:2px;
   letter-spacing:.01em}
+/* 主页面切换：一个托盘里放两个分段，选中的那段实心钴蓝。
+   托盘外形是关键——两个选项被同一圈细线框住，一眼就知道「这是二选一的页面开关」，
+   而不是两个普通按钮。本地书库是主场，阅读清单是附加页。 */
+.pagetabs{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:2px;border:1px solid var(--seg-line);border-radius:10px;
+  background:var(--seg-bg);box-shadow:inset 0 1px 2px rgba(22,26,48,.07);
+}
+.tab-title{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--serif);font-size:14.5px;font-weight:700;letter-spacing:.02em;
+  padding:5px 14px;line-height:1.4;white-space:nowrap;
+  border:1px solid transparent;border-radius:8px;
+  background:transparent;color:var(--txt);
+  transition:background .15s,color .15s,border-color .15s,box-shadow .15s;
+}
+.tab-title svg{width:14px;height:14px;flex:0 0 14px;stroke:currentColor;fill:none;
+  stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;opacity:.62}
+.tab-title:hover{background:var(--panel);color:var(--accent);border-color:var(--accent-line)}
+.tab-title:hover svg{opacity:1}
+.tab-title.on{
+  background:var(--accent);border-color:var(--accent-deep);color:#fff;
+  box-shadow:0 2px 9px -5px rgba(51,69,159,.85);
+}
+.tab-title.on svg{opacity:1}
+.tab-title.on:hover{background:var(--accent-deep);color:#fff;border-color:var(--accent-deep)}
+.tab-title:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* 顶栏按当前页面分组；不逐元素写 inline style，也不改既有 class/id */
+body.tab-reading .lib-only{display:none !important}
+body:not(.tab-reading) .reading-only{display:none !important}
+/* 收进下拉的原按钮：保留 DOM 与 onclick，由菜单项 .click() 触发，不复制逻辑 */
+.dd-source{display:none !important}
+/* 书库整理下拉：次级工具入口，与同步、体检同层级 */
+.dropdown{position:relative}
+.dd-menu[hidden]{display:none}
+.dd-menu{position:absolute;right:0;top:calc(100% + 6px);min-width:184px;
+  background:var(--panel);border:var(--hair);border-radius:var(--radius);
+  box-shadow:var(--shadow2);padding:6px;z-index:70}
+.dd-item{display:block;width:100%;text-align:left;padding:8px 12px;border:0;
+  background:transparent;border-radius:var(--radius-sm);font-size:12.5px;color:var(--txt2)}
+.dd-item:hover{background:var(--accent-tint);color:var(--accent)}
 .search{flex:1 1 220px;min-width:180px;max-width:360px;position:relative}
 .search input{width:100%;padding:7px 12px;border:var(--hair);border-radius:var(--radius-sm);
   background:var(--paper2);outline:none;font-size:13px;transition:border-color .14s,background .14s}
@@ -177,7 +220,22 @@ main{flex:1;min-width:0;padding:26px clamp(20px,2.2vw,46px) 96px}
 .chip.del{background:var(--paper2);color:var(--txt3)}
 .chip.notes{background:var(--keep-soft);color:var(--keep);border-color:var(--keep-line)}
 .chip.moved{background:var(--accent-soft);color:var(--accent-deep);border-color:var(--accent-line)}
-.oneline{color:var(--txt2);font-size:13px;margin-top:5px;word-break:break-word}
+/* 简介：固定 2 行，任何屏宽下卡片都等高；截断时浏览器自带省略号。
+   全文不进卡片，改为点一下弹浮层（见 .olpop），所以卡片尺寸永远不变。 */
+.oneline{color:var(--txt2);font-size:13px;margin-top:5px;word-break:break-word;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.oneline.trunc{cursor:pointer}
+.oneline.trunc:hover{color:var(--accent-deep);text-decoration:underline dotted;text-underline-offset:2px}
+/* 完整简介浮层：fixed 定位，不参与文档流，绝不影响卡片高度与网格对齐 */
+.olpop{position:fixed;z-index:70;display:none;background:var(--panel);border:var(--hair);
+  border-radius:var(--radius);box-shadow:0 8px 30px rgba(22,26,48,.18);padding:12px 14px 10px}
+.olpop.show{display:block}
+.olpop-hd{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;margin-bottom:7px}
+.olpop-hd b{font-size:13.5px;color:var(--txt);font-weight:600;font-family:var(--serif);line-height:1.45}
+.olpop-bd{font-size:13px;line-height:1.72;color:var(--txt2);max-height:min(52vh,420px);
+  overflow:auto;white-space:pre-wrap;word-break:break-word}
+.olpop-ft{margin-top:8px;padding-top:7px;border-top:var(--hair);font-size:11px;color:var(--txt3);
+  display:flex;justify-content:space-between;gap:10px}
 .meta{color:var(--txt3);font-size:11.5px;margin-top:6px;display:flex;gap:12px;flex-wrap:wrap}
 .acts{display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex:0 0 auto}
 .mini-btn{border:var(--hair);background:var(--panel);border-radius:var(--radius-sm);padding:3px 9px;
@@ -329,20 +387,8 @@ footer .n b{color:var(--accent);font-family:var(--serif);font-size:16px}
 .wiframe{margin-top:12px;padding:11px 13px;background:var(--warn-soft);border:1px solid var(--warn-line);
   border-radius:var(--radius-sm);font-size:12px;line-height:1.75;color:var(--warn)}
 
-/* ---------------- 重复与可删除 ---------------- */
-/* 入口固定在右下角，不再占顶栏；底栏/整理页操作条是 fixed，故留足上移空间 */
-#btnClean{position:fixed;right:24px;bottom:64px;z-index:80;
-  padding:11px 20px;border-radius:24px;
-  background:var(--accent);border-color:var(--accent);color:#fff;
-  font-size:13px;font-weight:600;
-  box-shadow:0 10px 26px -10px rgba(51,69,159,.75)}
-#btnClean:hover{background:var(--accent-deep);border-color:var(--accent-deep);color:#fff;
-  box-shadow:0 12px 28px -10px rgba(51,69,159,.85)}
-body.view-clean #btnClean{bottom:78px}
-@media(max-width:760px){
-  #btnClean{right:14px;bottom:100px;padding:10px 16px;font-size:12.5px}
-  body.view-clean #btnClean{bottom:116px}
-}
+/* ---------------- 重复与可删除 ----------------
+   入口已移入顶栏「书库整理」下拉：它是低频整理工具，不再常驻右下角。 */
 .btn.danger{background:var(--dup-soft);border-color:var(--dup-line);color:var(--dup);font-weight:600}
 .btn.danger:hover:not(:disabled){background:var(--dup);color:#fff;border-color:var(--dup)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
@@ -449,14 +495,88 @@ body.view-clean #btnClean{bottom:78px}
 .cfoot{padding:12px 18px;border-top:var(--hair);display:flex;justify-content:flex-end;gap:10px}
 @media(max-width:1100px){.dupgrid{grid-template-columns:1fr}}
 @media(max-width:760px){.cleanview{padding:16px 14px 140px}}
+
+/* ---------------- 我的阅读清单：与本地书库平级的独立页面 ----------------
+   沿用书库页的三栏节奏与视觉令牌，但分类、数据、控件全部独立。 */
+.readingview{display:flex;align-items:flex-start;gap:0;width:100%;max-width:none;margin:0}
+.rside{
+  width:clamp(228px,15vw,300px);flex:0 0 clamp(228px,15vw,300px);
+  position:sticky;top:60px;height:calc(100vh - 60px);
+  overflow-y:auto;background:var(--panel);border-right:var(--hair);
+  padding:22px clamp(12px,1vw,20px) 48px;
+}
+.rside h4{margin:22px 0 8px;font-size:9.5px;font-weight:700;color:var(--txt3);letter-spacing:.16em;
+  text-transform:uppercase;padding-left:12px}
+.rside h4:first-child{margin-top:0}
+.rside .mini{font-size:11.5px;color:var(--txt3);padding:6px 12px;line-height:1.7}
+.rmain{flex:1;min-width:0;padding:26px clamp(20px,2.2vw,46px) 96px}
+.rtoolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;
+  margin-bottom:18px}
+.rtitle{font-family:var(--serif);font-size:17px;font-weight:700;color:var(--txt);margin-right:auto}
+.rlist{display:flex;flex-direction:column;gap:10px}
+.rempty{padding:64px 20px;text-align:center;color:var(--txt3);line-height:1.9;
+  background:var(--panel);border:var(--hair);border-radius:var(--radius);box-shadow:var(--shadow1)}
+.rempty b{display:block;font-family:var(--serif);font-size:15px;color:var(--txt2);margin-bottom:6px}
+.rstat{display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  padding:12px 18px;background:var(--panel);border:var(--hair);border-radius:var(--radius);
+  margin-bottom:18px;font-size:12.5px;color:var(--txt2);box-shadow:var(--shadow1)}
+.rstat b{color:var(--txt);font-weight:600;font-family:var(--serif);font-size:15px}
+.chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;
+  background:var(--paper3);border:1px solid var(--line);color:var(--txt2);white-space:nowrap}
+.chip.src{background:var(--accent-tint);border-color:var(--accent-line);color:var(--accent-ink)}
+.chip.rate{background:var(--warn-soft);border-color:var(--warn-line);color:var(--warn)}
+/* 阅读清单卡片：一行一本，书名为主，来源 / 分类 / 评分为标识 */
+.rcard{display:flex;align-items:flex-start;gap:14px;padding:13px 16px;
+  background:var(--panel);border:var(--hair);border-radius:var(--radius);
+  box-shadow:var(--shadow1);transition:border-color .14s,box-shadow .14s}
+.rcard:hover{border-color:var(--accent-line);box-shadow:var(--shadow2)}
+.rbody{flex:1;min-width:0}
+.rnm{font-family:var(--serif);font-size:14px;font-weight:600;color:var(--txt);line-height:1.45;
+  overflow-wrap:anywhere}
+.rau{font-size:12px;color:var(--txt3);margin-top:2px}
+.rchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.rnote{margin-top:8px;padding-left:9px;border-left:2px solid var(--accent-tint);
+  font-size:12px;color:var(--txt2);line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}
+.racts{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.rsel{border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--panel);
+  color:var(--txt2);font-size:11.5px;padding:5px 6px;max-width:150px;cursor:pointer}
+.rsel:hover{border-color:var(--accent-line);color:var(--accent)}
+.rmsrc{margin-left:2px;padding:0 4px;font-size:12px;line-height:1;color:var(--txt3);
+  border:0;background:transparent;cursor:pointer}
+.rmsrc:hover{color:var(--dup)}
+@media(max-width:760px){
+  .rcard{flex-direction:column;gap:10px}
+  .racts{width:100%;justify-content:flex-end}
+  .rsel{max-width:none;flex:1}
+}
+@media(max-width:760px){
+  .readingview{flex-direction:column}
+  .rside{position:static;width:100%;flex:none;height:auto;max-height:42vh;
+    border-right:0;border-bottom:var(--hair)}
+  .rmain{width:100%;padding:18px 14px 110px}
+  .pagetabs{gap:1px;padding:2px;border-radius:9px}
+  .tab-title{font-size:12.5px;padding:5px 9px;gap:4px;border-radius:6px}
+  .tab-title svg{width:11px;height:11px;flex:0 0 11px}
+}
 </style>
 </head>
 <body>
 
 <header>
-  <div class="logo"><span class="logo-mark">书</span><span>本地书库管理</span> <small id="hdSub"></small></div>
-  <div class="search"><input id="q" placeholder="搜索书名 / 作者…" autocomplete="off"></div>
-  <div class="ctl"><label>排序</label>
+  <div class="logo">
+    <span class="logo-mark">书</span>
+    <div class="pagetabs" role="tablist" aria-label="页面切换">
+      <button class="tab-title on" id="tabLibrary" role="tab" aria-selected="true" aria-pressed="true" title="切换到本地电子书清单">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.8 3.1h3v9.8h-3z"/><path d="M7.1 3.1h3v9.8h-3z"/><path d="m11.7 4.4 2.9.8-2.4 8-2.9-.8z"/></svg><span>本地书库管理</span>
+      </button>
+      <button class="tab-title" id="tabReading" role="tab" aria-selected="false" aria-pressed="false" title="切换到我的阅读清单">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.3 2.7h7.4v10.6l-3.7-2.6-3.7 2.6z"/></svg><span>我的阅读清单</span>
+      </button>
+    </div>
+    <small id="hdSub"></small>
+  </div>
+  <div class="search lib-only"><input id="q" placeholder="搜索书名 / 作者…" autocomplete="off"></div>
+  <div class="ctl lib-only"><label>排序</label>
     <select id="sort">
       <option value="rating_desc">评分 高→低</option>
       <option value="rating_asc">评分 低→高</option>
@@ -468,7 +588,7 @@ body.view-clean #btnClean{bottom:78px}
       <option value="title">书名</option>
     </select>
   </div>
-  <div class="ctl"><label>命名</label>
+  <div class="ctl lib-only"><label>命名</label>
     <select id="fmt">
       <option value="auto">自动（知名作者在前）</option>
       <option value="author">全部 作者 + 书名</option>
@@ -476,22 +596,29 @@ body.view-clean #btnClean{bottom:78px}
     </select>
   </div>
   <div class="spacer"></div>
-  <div class="syncbar"><span class="dot" id="syncDot"></span><span id="syncText">未同步</span></div>
-  <span class="storebadge" id="storeBadge" title="点击查看数据体检">数据体检</span>
-  <button class="btn" id="btnSync" title="重新扫描你选的书库文件夹（只读，不改动任何文件）">同步本地书库</button>
-  <button class="btn" id="btnCopy">复制选中书名</button>
-  <button class="btn" id="btnNote" title="导出一个纯文本清单（.txt）：按分类分组，每本只留「书名 · 作者」「豆瓣分 / 我的评分 / 我的评价」。适合丢给 AI 做阅读分析与推荐，不能拿来恢复书库">导出我的阅读清单</button>
-  <button class="btn" id="btnState" title="把书单 + 豆瓣评分 + 我的评分 + 阅读进度 + 笔记 打成一个文件，换电脑后选「恢复」原样还原">完整备份</button>
-  <button class="btn" id="btnImport" title="选一个 JSON，自动识别：完整备份→书单和评分笔记一起还原；只有书单→只换书单；只有评分笔记→合并回来">恢复</button>
+  <div class="syncbar lib-only"><span class="dot" id="syncDot"></span><span id="syncText">未同步</span></div>
+  <span class="storebadge lib-only" id="storeBadge" title="点击查看数据体检">数据体检</span>
+  <div class="dropdown lib-only" id="ddOrganize">
+    <button class="btn" id="ddOrganizeBtn" aria-haspopup="true" aria-expanded="false">书库整理 ▾</button>
+    <div class="dd-menu" id="ddOrganizeMenu" role="menu" hidden>
+      <button class="dd-item" role="menuitem" data-act="sync">同步本地书库</button>
+      <button class="dd-item" role="menuitem" data-act="clean">重复与可删除</button>
+      <button class="dd-item" role="menuitem" data-act="health">数据体检</button>
+    </div>
+  </div>
+  <button class="btn dd-source" id="btnSync" title="重新扫描你选的书库文件夹（只读，不改动任何文件）">同步本地书库</button>
+  <button class="btn lib-only" id="btnCopy">复制选中书名</button>
+  <button class="btn lib-only" id="btnState" title="把书单 + 豆瓣评分 + 我的评分 + 阅读进度 + 笔记 打成一个文件，换电脑后选「恢复」原样还原">完整备份</button>
+  <button class="btn lib-only" id="btnImport" title="选一个 JSON，自动识别：完整备份→书单和评分笔记一起还原；只有书单→只换书单；只有评分笔记→合并回来">恢复</button>
   <button class="btn" id="btnLang" title="切换界面语言 / Switch UI language">EN</button>
   <button class="btn" id="btnGuide" title="查看使用说明">?</button>
-  <button class="btn" id="btnHealth">数据体检</button>
+  <button class="btn dd-source" id="btnHealth">数据体检</button>
   <input type="file" id="impFile" accept=".json,application/json" style="display:none">
 </header>
 
 <div class="wrap">
   <aside>
-    <h4>分类</h4>
+    <h4>本地书库分类</h4>
     <div id="cats"></div>
     <h4>阅读状态</h4>
     <label class="chk"><input type="radio" name="rd" value="all" checked> 全部</label>
@@ -532,10 +659,8 @@ body.view-clean #btnClean{bottom:78px}
   </main>
 </div>
 
-<!-- 右下角固定入口：不占顶栏，切到整理页后变成「返回书库」 -->
-<button class="btn" id="btnClean" title="重复与可删除：逐份勾选后批量整理">重复与可删除</button>
-
-<!-- ===== 重复与可删除：独立视图，逐份勾选、默认全不选 ===== -->
+<!-- ===== 重复与可删除：独立视图，逐份勾选、默认全不选 =====
+     入口在顶栏「书库整理」下拉里；整理页左上角的「返回书库」负责返回。 -->
 <div class="cleanview" id="cleanView" style="display:none">
   <div class="clean-top">
     <button class="btn" id="btnCleanBack">返回书库</button>
@@ -599,6 +724,32 @@ body.view-clean #btnClean{bottom:78px}
   <span class="hint">评分/页数/笔记只存在本机；笔记正文存浏览器数据库，备份时自动合并成一个文件。</span>
 </footer>
 
+<!-- ===== 我的阅读清单：与本地书库平级的独立页面 ===== -->
+<div class="readingview" id="readingView" style="display:none">
+  <div class="rside">
+    <h4>我的阅读分类</h4>
+    <div id="readingCats"><div class="mini">分类筛选将在下一步接入。</div></div>
+    <h4>来源</h4>
+    <div id="readingSources"><div class="mini">导入记录后显示来源。</div></div>
+  </div>
+  <div class="rmain">
+    <div class="rtoolbar">
+      <span class="rtitle">全渠道已读清单</span>
+      <button class="btn" id="btnReadImport">导入阅读记录</button>
+      <button class="btn primary" id="btnNoteCopy">复制阅读清单</button>
+      <button class="btn" id="btnNote" title="导出纯文本清单给 AI 做阅读分析；清单按「我的阅读分类」分组，与本地电子书分类相互独立">导出 .txt</button>
+      <input type="file" id="readImpFile" accept=".txt,.csv,.tsv,.json,text/plain,text/csv,application/json" multiple style="display:none">
+    </div>
+    <div class="rstat" id="readingStat"></div>
+    <div class="rlist" id="readingList"></div>
+    <div class="rempty" id="readingEmpty">
+      <b>还没有阅读记录</b>
+      点「导入阅读记录」添加 TXT / CSV / JSON 文件；<br>本地书库里标记为「已读」的书会自动出现在下面的清单里。
+    </div>
+    <div class="mini" id="readingTip"></div>
+  </div>
+</div>
+
 <div class="scrim" id="scrim"></div>
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dTitle">
   <div class="dhead">
@@ -642,6 +793,16 @@ body.view-clean #btnClean{bottom:78px}
   </div>
 </aside>
 
+<!-- 完整简介浮层：只读展示，不改卡片布局 -->
+<div class="olpop" id="olPop" role="dialog" aria-modal="false" aria-labelledby="olPopTitle">
+  <div class="olpop-hd">
+    <b id="olPopTitle"></b>
+    <button class="mini-btn" id="olPopClose">关闭</button>
+  </div>
+  <div class="olpop-bd" id="olPopBody"></div>
+  <div class="olpop-ft"><span id="olPopSrc"></span><span id="olPopHint"></span></div>
+</div>
+
 <div class="scrim" id="hScrim"></div>
 <div class="hmodal" id="hModal" role="dialog" aria-modal="true" aria-labelledby="hTitle">
   <div class="hhead"><b id="hTitle">数据体检</b><button class="mini-btn" id="hClose">关闭</button></div>
@@ -676,9 +837,17 @@ body.view-clean #btnClean{bottom:78px}
 <script id="DOUBAN_PACK" type="application/json">__DOUBAN_PACK__</script>
 <script id="SCAN_JS">__SCAN_JS__</script>
 <script id="EXACTDUP_JS">__EXACTDUP_JS__</script>
+<script id="READINGMERGE_JS">__READINGMERGE_JS__</script>
 <script>
 (function(){
 "use strict";
+
+/* 主页面 + 子视图两层状态：
+   TAB  = library | reading   平级主页面（左上角两个标题块的点亮态）
+   VIEW = list | clean        仅 library 内的子视图（整理页不是平级页面）
+   切回 library 时 VIEW 重置为 list，避免出现「从阅读页返回却落在整理页」。 */
+let TAB='library', VIEW='list';
+const isClean=()=> TAB==='library' && VIEW==='clean';
 
 /* ============================================================
    中英界面：只对「界面文案」做翻译，绝不碰书名 / 作者 / 简介 / 路径 / 笔记等用户数据。
@@ -704,6 +873,8 @@ const EN={
   "自动（知名作者在前）":"Auto (well-known author first)",
   "全部 作者 + 书名":"All: Author · Title","全部 书名 + 作者":"All: Title · Author",
   "未同步":"Not synced","数据体检":"Data check","同步本地书库":"Sync local library",
+  "切换到本地电子书清单":"Switch to the local ebook list",
+  "切换到我的阅读清单":"Switch to my reading list",
   "复制选中书名":"Copy selected titles","导出我的阅读清单":"Export my reading list",
   "完整备份":"Full backup","恢复":"Restore","?":"?","EN":"EN","中":"中",
   /* 侧栏 */
@@ -805,7 +976,58 @@ const EN={
   "选一个 JSON，自动识别：完整备份→书单和评分笔记一起还原；只有书单→只换书单；只有评分笔记→合并回来":
     "Pick a JSON: a full backup restores everything, a bare list only replaces the list, and a ratings/notes file is merged in",
   "查看使用说明":"Show the guide","点击查看数据体检":"Open data check",
-  "导出一个纯文本清单（.txt）：":"Export a plain-text list (.txt): "
+  "导出一个纯文本清单（.txt）：":"Export a plain-text list (.txt): ",
+  /* 我的阅读清单 */
+  "我的阅读清单":"My Reading List","本地书库分类":"Local library categories",
+  "书库整理 ▾":"Library tools ▾","书库整理":"Library tools",
+  "全渠道已读清单":"All-channel reading list",
+  "导入阅读记录":"Import reading records","复制阅读清单":"Copy reading list",
+  "导出 .txt":"Export .txt","我的阅读分类":"My reading categories","来源":"Sources",
+  "分类筛选将在下一步接入。":"Category filters are coming in the next step.",
+  "导入记录后显示来源。":"Sources appear here after you import records.",
+  "还没有阅读记录":"No reading records yet",
+  "点「导入阅读记录」添加 TXT / CSV / JSON 文件；":
+    "Click Import reading records to add TXT / CSV / JSON files;",
+  "本地书库里标记为「已读」的书会自动出现在下面的清单里。":
+    "Books marked as read in your local library are added to this list automatically.",
+  "导入与复制能力将在下一步接入。":"Import and copy will be wired up in the next step.",
+  "导出纯文本清单给 AI 做阅读分析；清单按「我的阅读分类」分组，与本地电子书分类相互独立":
+    "Export a plain-text list for AI reading analysis; grouped by My reading categories, independent of local ebook categories",
+  /* 我的阅读清单：数据层 / 导入 / 导出 */
+  "本地书库":"Local library","导入":"Imported","移除":"Remove",
+  "评分":"Rating","无":"—","本地汇入":"From library","当前筛选":"Shown",
+  "个":" "," 个":" "," 条":" ",
+  "移除该来源的导入记录":"Remove this import",
+  "还没有已读记录；本地书库标记「已读」后会自动出现在这里。":
+    "No read books yet. Mark books as read in your local library and they show up here.",
+  "当前筛选下没有记录":"Nothing under the current filter",
+  "换一个分类或来源看看。":"Try another category or source.",
+  "给这本书换一个「我的阅读分类」；只影响这里，不动本地书库分类":
+    "Change this book's reading category. Only affects this page, never your local library categories.",
+  "已移除该记录":"Record removed",
+  "已移除该来源的记录":"Records from that source removed",
+  "解析模块未加载，请刷新页面":"Parser module is not loaded. Please reload the page.",
+  "超过 60MB，已跳过":"is larger than 60MB and was skipped",
+  "读取失败":"could not be read",
+  "是书库备份文件，请用本地书库的「恢复」":"is a library backup. Use Restore in the local library page instead.",
+  "解析失败":"could not be parsed",
+  "里没有可识别的书目":"contains no recognizable titles",
+  "新增 ":"added ","合并 ":"merged ","跳过 ":"skipped ",
+  "重复文件 ":"duplicate file "," 个（已跳过）":" (skipped)",
+  "失败 ":"failed ",
+  "没有新增任何记录":"Nothing new was added",
+  "还没有阅读记录可以复制":"No reading records to copy yet",
+  "已复制阅读清单，可直接粘贴给 AI":"Reading list copied — paste it into an AI chat",
+  "还没有阅读记录可以导出":"No reading records to export yet",
+  "已导出 ":"Exported ",
+  "浏览器存储已满，阅读记录没能保存；请先「完整备份」再清理旧数据":
+    "Browser storage is full. Make a full backup, then clean up old data.",
+  "我的阅读 · 全渠道已读清单":"My Reading · all-channel reading list",
+  " 个分类（分类为「我的阅读」独立分类，与本地电子书分类无关；仅供本人参考）":
+    " categories (reading-list categories, independent of local ebook categories; for personal reference only)",
+  "已阅 · ":"Read · ",
+  "点开看完整简介":"Click to read the full introduction",
+  "豆瓣简介":"Douban introduction","一句话介绍":"One-line summary","Esc 关闭":"Esc to close"
 };
 function t(s){
   if(LANG!=='en') return s==null?'':String(s);
@@ -819,7 +1041,8 @@ function trKeepSpace(o){
 }
 /* 这些容器里是书单 / 路径 / 笔记等用户数据，翻译时整棵子树跳过，
    避免某本书恰好叫「笔记」「全部」时被当成界面文案改掉。 */
-const I18N_SKIP=new Set(['list','stat','sideStat','cats','bulkCat','toast','cleanList','cleanStat','trashPath']);
+const I18N_SKIP=new Set(['list','stat','sideStat','cats','bulkCat','toast','cleanList','cleanStat','trashPath',
+  'readingList','readingStat','readingCats','readingSources','readingTip','olPopTitle','olPopBody']);
 function inDataZone(nd,root){
   let p=nd.parentElement;
   while(p && p!==root){
@@ -854,12 +1077,11 @@ function applyStatic(root){
 }
 function applyLangAll(){
   document.documentElement.lang = LANG==='en'?'en':'zh-CN';
-  document.title = t('本地书库管理')+' · '+(LANG==='en'?'Ebook Manager':'电子图书馆');
+  document.title = (TAB==='reading'?t('我的阅读清单'):t('本地书库管理'))
+    +' · '+(LANG==='en'?'Ebook Manager':'电子图书馆');
   applyStatic(document.body);
   const lb=document.getElementById('btnLang');
   if(lb) lb.textContent = LANG==='en'?'中':'EN';
-  try{ document.getElementById('btnClean').textContent =
-    VIEW==='clean'?t('返回书库'):t('重复与可删除'); }catch(e){}
 }
 function setLang(v){
   LANG=(v==='en')?'en':'zh';
@@ -868,11 +1090,13 @@ function setLang(v){
   try{ renderCats(); }catch(e){}
   try{ render(); }catch(e){}
   try{ renderTrashBox(); }catch(e){}
-  try{ if(VIEW==='clean') renderClean(); }catch(e){}
+  try{ if(isClean()) renderClean(); }catch(e){}
+  try{ if(TAB==='reading') renderReading(); }catch(e){}
 }
 
 const DS = window.EbooklibScan || null;
 const EX = window.EbooklibExactdup || null;   // 内容哈希 / 聚类 / 事务 manifest 纯逻辑模块
+const RM = window.EbooklibReading || null;    // 阅读记录解析 / 字段归一 / 跨来源合并纯逻辑模块
 const DB = JSON.parse(document.getElementById('LIBRARY_DATA').textContent);
 const BOOKS = DB.books || [];
 const SCANS = DB.scansets || [];
@@ -1003,7 +1227,7 @@ function fillFromPack(list){
 const LS_NS='ebooklib_';
 const LS_SUFFIX=['library_state_v1','library_state_v2','library_state_v3',
   'library_state_v1_backup','library_state_v2_backup','library_state_v3_preRmap',
-  'notes_v3','has_library_v1','welcome_seen_v1'];
+  'notes_v3','has_library_v1','welcome_seen_v1','reading_v1'];
 function lsSuffixOf(k){
   return LS_SUFFIX.find(s=>k===s || k.endsWith('_'+s)) || null;
 }
@@ -1130,6 +1354,7 @@ function saveImmediate(){
 }
 function flushPending(){
   if(saveT){ clearTimeout(saveT); saveT=null; saveNow(); }
+  try{ readFlush(); }catch(e){}
 }
 addEventListener('pagehide', flushPending);
 addEventListener('beforeunload', flushPending);
@@ -1528,8 +1753,9 @@ async function restoreAny(file){
   const full = !!(d && d.library && Array.isArray(d.library.books));
   const libSrc = full ? d.library : (d && Array.isArray(d.books) ? d : null);
   const st = (d && d.state && typeof d.state==='object') ? d.state : null;
-  if(!libSrc && !st){
-    toast('认不出这个文件：既没有书单（books），也没有评分笔记（state）'); return;
+  const rd = (d && d.reading && typeof d.reading==='object' && Array.isArray(d.reading.records)) ? d.reading : null;
+  if(!libSrc && !st && !rd){
+    toast('认不出这个文件：既没有书单（books），也没有评分笔记（state）或阅读清单'); return;
   }
   const notes = (d && d.notes && typeof d.notes==='object') ? d.notes
               : (st && st.note && typeof st.note==='object' ? st.note : {});
@@ -1554,6 +1780,8 @@ async function restoreAny(file){
         + `我的评分：${nRate} 个 · 阅读进度：${nPage} 条 · 笔记：${nNote} 条\n\n`
         + '确定 = 合并到当前书单（本机独有保留，冲突以备份为准）\n取消 = 放弃';
   }
+  const nReadRec = rd ? rd.records.length : 0;
+  if(rd) msg = msg.replace('确定 = ', `我的阅读清单：${nReadRec} 条记录（按书籍合并，不覆盖已有记录）\n\n确定 = `);
   if(!confirm(msg)){ toast('已取消'); return; }
 
   if(libSrc){
@@ -1566,13 +1794,18 @@ async function restoreAny(file){
     state.autoHidden={};
   }
   const r = st ? await mergeStateBundle(st,notes) : {note:0,rate:0,page:0,link:0,unknown:0};
+  const rr = rd ? mergeReadingBundle(rd) : null;
   renderCats(); render(); updateStoreBadge(); updateSyncInfo();
+  try{ if(TAB==='reading') renderReading(); }catch(e){}
+  const readTail = rr ? ` · 阅读记录 +${rr.added}/合并 ${rr.merged}` : '';
   if(full){
-    toast(`已还原：${ALL.length} 条书单 · ${r.rate} 个评分 · ${r.note} 条笔记`);
+    toast(`已还原：${ALL.length} 条书单 · ${r.rate} 个评分 · ${r.note} 条笔记${readTail}`);
   }else if(libSrc){
-    toast(`已载入书单 ${ALL.length} 条`);
+    toast(`已载入书单 ${ALL.length} 条${readTail}`);
+  }else if(st){
+    toast(`已合并：${r.rate} 个评分 · ${r.note} 条笔记 · ${r.page} 条进度${readTail}`);
   }else{
-    toast(`已合并：${r.rate} 个评分 · ${r.note} 条笔记 · ${r.page} 条进度`);
+    toast(`已合并阅读记录：+${rr.added} / 合并 ${rr.merged}`);
   }
 }
 document.getElementById('btnImport').onclick=()=>document.getElementById('impFile').click();
@@ -2121,7 +2354,8 @@ function renderCats(){
   let h=`<div class="cat ${F.cat==='全部'?'on':''}" data-c="全部">${esc(catLabel('全部'))}<span class="cnt">${ALL.length}</span></div>`;
   catNames.forEach(c=>{ h+=`<div class="cat ${F.cat===c?'on':''}" data-c="${esc(c)}">${esc(catLabel(c))}<span class="cnt">${catCount[c]}</span></div>`; });
   document.getElementById('cats').innerHTML=h;
-  document.querySelectorAll('.cat').forEach(el=>{ el.onclick=()=>{F.cat=el.dataset.c;renderCats();render();}; });
+  /* 只绑本地书库侧栏自己的分类项：阅读页也复用 .cat 外观，不能被这里的点击逻辑接管 */
+  document.querySelectorAll('#cats .cat').forEach(el=>{ el.onclick=()=>{F.cat=el.dataset.c;renderCats();render();}; });
 }
 
 /* ---------- 过滤 ---------- */
@@ -2216,7 +2450,7 @@ function render(){
           ${b.suspect?`<span class="chip warn">${t('待核实')}</span>`:''}
           ${partN?`<span class="chip warn">${t('缺')} ${partN} ${t('份')}</span>`:''}
         </div>
-        ${ol?`<div class="oneline">${esc(ol)}</div>`:''}
+        ${ol?`<div class="oneline" data-ol="${esc(b.sk)}">${esc(ol)}</div>`:''}
         <div class="meta">
           <span>${human(effSize(b))}</span>
           <span>${b.kind==='scanset'? b.pages+' 页图' : (b.ext||'').toUpperCase()}</span>
@@ -2242,6 +2476,7 @@ function render(){
     </div>`;
   });
   document.getElementById('list').innerHTML=h;
+  markTruncIntro();   // 只有真被 2 行截断的简介才标记可点，短简介不打扰
   document.getElementById('empty').style.display=rows.length?'none':'block';
 
   const rated=rows.filter(b=>b.rating);
@@ -2271,7 +2506,7 @@ function render(){
     +`${t('已读')} ${ALL.filter(effRead).length}<br>`
     +`${t('在读')} ${inN} · ${t('读完')} ${finN}<br>`
     +`${t('有笔记')} ${noteN} · ${t('我评分')} ${mineN}`;
-  document.getElementById('hdSub').textContent=`${ALL.length} 条 · ${sourceLabel()} · ${(DB.generated_at||'').slice(0,10)}`;
+  updateHdSub();
   bind();
 }
 
@@ -2281,7 +2516,6 @@ function render(){
    手动勾选确认；先复制进书库内隔离目录并校验大小，再移除原文件；
    每批最多 10 份，失败立即停止；隔离目录副本由你手动清空。
    ============================================================ */
-let VIEW='list';
 const CLEAN_SEL=new Set();          // 用户勾选的要删除项（key = sk::rel）
 const KEEPS=new Set();              // 用户在内容相同组中「保留此路径」的 rel（normr）
 let CLEAN_ITEMS=[];
@@ -2477,25 +2711,560 @@ function renderClean(){
     el.onclick=e=>{ e.preventDefault(); e.stopPropagation(); markKeeper(el.dataset.keep); };
   });
 }
-/* 底栏在窄屏会换行变高，按实测高度动态上移浮标，避免压住底栏 */
-function placeFab(){
-  const b=document.getElementById('btnClean'); if(!b) return;
-  const bar=(VIEW==='clean')?document.getElementById('cleanFoot'):document.querySelector('footer');
-  const h=bar?Math.round(bar.getBoundingClientRect().height):44;
-  b.style.bottom=(h+14)+'px';
+/* 唯一真源：按 (TAB, VIEW) 一次性设置所有容器显隐、标题块点亮、顶栏分组与渲染。
+   header 是全局共享的，靠 body 修饰类 + .lib-only / .reading-only 分组显隐。 */
+function applyView(){
+  const clean=isClean(), reading=(TAB==='reading');
+  document.body.classList.toggle('view-clean',clean);
+  document.body.classList.toggle('tab-reading',reading);
+  document.querySelector('.wrap').style.display = (reading||clean)?'none':'';
+  document.querySelector('footer').style.display = (reading||clean)?'none':'';
+  document.getElementById('cleanView').style.display = clean?'block':'none';
+  document.getElementById('cleanFoot').style.display = clean?'flex':'none';
+  document.getElementById('readingView').style.display = reading?'flex':'none';
+
+  // 两个标签页互斥点亮
+  const tl=document.getElementById('tabLibrary'), tr=document.getElementById('tabReading');
+  if(tl){ tl.classList.toggle('on',!reading);
+    tl.setAttribute('aria-pressed',String(!reading));
+    tl.setAttribute('aria-selected',String(!reading)); }
+  if(tr){ tr.classList.toggle('on',reading);
+    tr.setAttribute('aria-pressed',String(reading));
+    tr.setAttribute('aria-selected',String(reading)); }
+
+  document.title=(reading?t('我的阅读清单'):t('本地书库管理'))
+    +' · '+(LANG==='en'?'Ebook Manager':'电子图书馆');
+  updateHdSub();
+  if(clean) renderClean();
+  else if(reading) renderReading();
+  else render();
+}
+/* 副标题复用同一处：书库页显示书单规模，阅读页显示已读总数与来源数 */
+function updateHdSub(){
+  const el=document.getElementById('hdSub'); if(!el) return;
+  if(TAB==='reading'){
+    try{
+      const n=getReadingRows().length, m=readingSourceCount();
+      el.textContent = LANG==='en'
+        ? `${n} read · ${m} source${m===1?'':'s'}`
+        : `已读 ${n} 本 · ${m} 个来源`;
+    }catch(e){ el.textContent=''; }
+  }else{
+    el.textContent=`${ALL.length} 条 · ${sourceLabel()} · ${(DB.generated_at||'').slice(0,10)}`;
+  }
+}
+function setTab(tab){
+  const next=(tab==='reading')?'reading':'library';
+  if(next==='library') VIEW='list';     // 整理页是子视图，不跨主切换记忆
+  TAB=next;
+  closeOrganize();
+  applyView();
 }
 function setView(v){
-  VIEW=v;
-  const on=(v==='clean');
-  document.body.classList.toggle('view-clean',on);
-  document.querySelector('.wrap').style.display=on?'none':'';
-  document.querySelector('footer').style.display=on?'none':'';
-  document.getElementById('cleanView').style.display=on?'block':'none';
-  document.getElementById('cleanFoot').style.display=on?'flex':'none';
-  document.getElementById('btnClean').textContent=on?t('返回书库'):t('重复与可删除');
-  if(on) renderClean();
-  placeFab();
+  if(TAB!=='library') return;
+  VIEW=(v==='clean')?'clean':'list';
+  closeOrganize();
+  applyView();
 }
+/* 「书库整理」下拉：点击外部 / Esc 关闭 */
+function closeOrganize(){
+  const m=document.getElementById('ddOrganizeMenu'), b=document.getElementById('ddOrganizeBtn');
+  if(m) m.hidden=true;
+  if(b) b.setAttribute('aria-expanded','false');
+}
+function toggleOrganize(){
+  const m=document.getElementById('ddOrganizeMenu'), b=document.getElementById('ddOrganizeBtn');
+  if(!m||!b) return;
+  m.hidden=!m.hidden;
+  b.setAttribute('aria-expanded',String(!m.hidden));
+}
+
+/* ============================================================
+   我的阅读清单 —— 独立数据层
+   ------------------------------------------------------------
+   · 独立 localStorage 键 ebooklib_reading_v1，绝不写 state，绝不碰 state.cat
+   · 本地书库「已读」是运行时派生的虚拟来源：不落库、不产生第二份书数据，
+     改了本地「已读」标记这里跟着变
+   · 分类是阅读侧自己的 RP.cats[rid]，与本地电子书的 13 类完全隔离
+   · 同一本书跨来源合并成一条，靠 RM.sameBook 的三级判定（ISBN → 来源 id → 书名+作者）
+   ============================================================ */
+const LS_READING='ebooklib_reading_v1';
+const R_LOCAL='local';                       // 虚拟来源 id：本地书库
+let RP={__v:1,sources:[],cats:{},records:[]};
+let RF={cat:'全部',src:'全部'};              // 阅读页自己的筛选状态
+let _READ_ROWS=null;                         // 派生行缓存
+
+function loadReading(){
+  try{
+    const d=JSON.parse(readLS(LS_READING)||'null');
+    if(d && typeof d==='object'){
+      RP={
+        __v:1,
+        sources:Array.isArray(d.sources)?d.sources:[],
+        cats:(d.cats && typeof d.cats==='object')?d.cats:{},
+        records:Array.isArray(d.records)?d.records:[]
+      };
+    }
+  }catch(e){}
+}
+let readSaveT=null;
+function saveReading(now){
+  clearTimeout(readSaveT); readSaveT=null;
+  if(!now){ readSaveT=setTimeout(()=>{ readSaveT=null; writeReading(); },350); return; }
+  writeReading();
+}
+function writeReading(){
+  try{ localStorage.setItem(LS_READING, JSON.stringify(RP)); }
+  catch(e){ toast(t('浏览器存储已满，阅读记录没能保存；请先「完整备份」再清理旧数据')); }
+}
+function readFlush(){ if(readSaveT){ clearTimeout(readSaveT); readSaveT=null; writeReading(); } }
+function invalidateReading(){ _READ_ROWS=null; }
+loadReading();
+
+/* 本地书库作者集合：只用于把「作者 · 书名」这类字符串拆对，不参与合并判定 */
+const LOCAL_AUTHORS=new Set();
+function rebuildLocalAuthors(){
+  LOCAL_AUTHORS.clear();
+  if(!RM) return;
+  ALL.forEach(b=>{ if(b.author) LOCAL_AUTHORS.add(RM.normAuthor(b.author)); });
+}
+function authorHint(seg){
+  if(!RM) return false;
+  const n=RM.normAuthor(seg);
+  return !!(n && LOCAL_AUTHORS.has(n));
+}
+
+/* 本地书库「已读」→ 派生行。纯内存，不写任何存储 */
+function deriveLocalRead(){
+  const out=[];
+  ALL.forEach(b=>{
+    if(!effRead(b)) return;
+    const rid='L:'+b.sk;
+    out.push({
+      rid:rid,
+      title:b.title||'',
+      author:b.author||'',
+      isbn:(b.douban&&b.douban.isbn)||'',
+      origin:'',
+      originUrl:'',
+      rate:myRate(b.sk),
+      rating10:b.rating||0,
+      comment:noteText(b.sk).trim(),
+      catFallback:effCat(b)||'',
+      sources:[R_LOCAL],
+      srcIds:[],
+      local:true,
+      sk:b.sk
+    });
+  });
+  return out;
+}
+
+/* 派生行 = 本地已读 + 导入记录，按 sameBook 合并成一条 */
+function buildRows(){
+  if(_READ_ROWS) return _READ_ROWS;
+  if(!RM){ _READ_ROWS=[]; return _READ_ROWS; }
+  rebuildLocalAuthors();
+  const rows=deriveLocalRead();
+  const idxIsbn=new Map(), idxKey=new Map();
+  function addIdx(r,i){
+    const isbn=r.isbn?(RM.normIsbn(r.isbn)||''):'';
+    if(isbn && !idxIsbn.has(isbn)) idxIsbn.set(isbn,i);
+    const tk=RM.normTitle(r.title);
+    if(tk){ const a=idxKey.get(tk); if(a) a.push(i); else idxKey.set(tk,[i]); }
+  }
+  function cands(r){
+    const set=new Set();
+    const isbn=r.isbn?(RM.normIsbn(r.isbn)||''):'';
+    if(isbn && idxIsbn.has(isbn)) set.add(idxIsbn.get(isbn));
+    const tk=RM.normTitle(r.title);
+    if(tk && idxKey.has(tk)) idxKey.get(tk).forEach(i=>set.add(i));
+    return [...set];
+  }
+  rows.forEach((r,i)=>addIdx(r,i));
+
+  RP.records.forEach(rec=>{
+    const r={
+      rid:rec.rid,
+      title:rec.title||'',
+      author:rec.author||'',
+      isbn:rec.isbn||'',
+      origin:rec.origin||'',
+      originUrl:rec.originUrl||'',
+      rate:rec.rate||0,
+      rating10:rec.rating10||0,
+      comment:rec.comment||'',
+      catFallback:rec.cat||'',
+      sources:(rec.sources||[]).slice(),
+      srcIds:(rec.srcIds||[]).slice(),
+      local:false
+    };
+    let hit=-1;
+    const cs=cands(r);
+    for(const i of cs){ if(RM.sameBook(rows[i],r)){ hit=i; break; } }
+    if(hit>=0){
+      const m=RM.mergeRecords(rows[hit],r);
+      m.rid=rows[hit].rid;                      // 保留本地行 rid，分类覆写才对得上
+      m.local=rows[hit].local;
+      m.sk=rows[hit].sk;
+      m.catFallback=rows[hit].catFallback||r.catFallback;
+      rows[hit]=m;
+    }else{
+      rows.push(r);
+      addIdx(r,rows.length-1);
+    }
+  });
+
+  /* 分类解析：阅读侧覆写优先 → 其次继承（本地分类 / 文件里的分类）→ 未分类 */
+  rows.forEach(r=>{
+    r.cat=RP.cats[r.rid] || r.catFallback || '未分类';
+  });
+  _READ_ROWS=rows;
+  return rows;
+}
+function getReadingRows(){ return buildRows(); }
+function readingSourceCount(){
+  const set=new Set();
+  buildRows().forEach(r=>(r.sources||[]).forEach(s=>set.add(s)));
+  return set.size;
+}
+function srcLabel(sid){
+  if(sid===R_LOCAL) return LANG==='en'?'Local library':'本地书库';
+  const s=(RP.sources||[]).find(x=>x.id===sid);
+  if(s) return s.label||s.file||'阅读记录';
+  return LANG==='en'?'Import':'导入记录';
+}
+function fmtStars(v){
+  const n=Math.round((Number(v)||0)*2)/2;
+  if(!n) return '—';
+  return (Number.isInteger(n)?String(n):n.toFixed(1));
+}
+
+/* ---------- 渲染 ---------- */
+function readingCatRow(val,label,count,on){
+  return `<div class="cat${on?' on':''}" data-rcat="${esc(val)}">${esc(label)}<span class="cnt">${count}</span></div>`;
+}
+function readingCatOptions(sel){
+  const list=['未分类'].concat(RM?RM.CAT_LIST:CAT_ORDER);
+  return list.map(c=>`<option value="${esc(c)}"${c===sel?' selected':''}>${esc(catLabel(c))}</option>`).join('');
+}
+function renderReading(){
+  const rows=buildRows();
+  const elCats=document.getElementById('readingCats');
+  const elSrcs=document.getElementById('readingSources');
+  const elList=document.getElementById('readingList');
+  const elStat=document.getElementById('readingStat');
+  const elEmpty=document.getElementById('readingEmpty');
+  const elTip=document.getElementById('readingTip');
+
+  /* 分类计数 */
+  const catCount={};
+  rows.forEach(r=>{ const c=r.cat||'未分类'; catCount[c]=(catCount[c]||0)+1; });
+  const catNames=Object.keys(catCount).sort((a,b)=>
+    catRank(a)-catRank(b) || catCount[b]-catCount[a] || a.localeCompare(b,'zh-CN'));
+
+  if(elCats){
+    if(!rows.length){
+      elCats.innerHTML=`<div class="mini">${t('还没有已读记录；本地书库标记「已读」后会自动出现在这里。')}</div>`;
+    }else{
+      elCats.innerHTML=readingCatRow('全部',t('全部'),rows.length,RF.cat==='全部')
+        + catNames.map(c=>readingCatRow(c,catLabel(c),catCount[c],RF.cat===c)).join('');
+    }
+  }
+
+  /* 来源计数 */
+  const srcCount={};
+  rows.forEach(r=>(r.sources||[]).forEach(s=>{ srcCount[s]=(srcCount[s]||0)+1; }));
+  const srcIds=Object.keys(srcCount).sort((a,b)=>{
+    if(a===R_LOCAL) return -1;
+    if(b===R_LOCAL) return 1;
+    return srcCount[b]-srcCount[a];
+  });
+  if(elSrcs){
+    if(!srcIds.length){
+      elSrcs.innerHTML=`<div class="mini">${t('导入记录后显示来源。')}</div>`;
+    }else{
+      elSrcs.innerHTML=readingCatRow('全部',t('全部'),rows.length,RF.src==='全部')
+        + srcIds.map(s=>{
+            const del=(s===R_LOCAL)?'':`<button class="mini-btn rmsrc" data-rmsrc="${esc(s)}" title="${esc(t('移除该来源的导入记录'))}">×</button>`;
+            return `<div class="cat${RF.src===s?' on':''}" data-rsrc="${esc(s)}">${esc(srcLabel(s))}<span class="cnt">${srcCount[s]}</span>${del}</div>`;
+          }).join('');
+    }
+  }
+
+  /* 应用筛选 */
+  const view=rows.filter(r=>{
+    if(RF.cat!=='全部' && (r.cat||'未分类')!==RF.cat) return false;
+    if(RF.src!=='全部' && (r.sources||[]).indexOf(RF.src)<0) return false;
+    return true;
+  });
+
+  if(elStat){
+    const localN=rows.filter(r=>r.local).length;
+    const impN=rows.length-localN;
+    elStat.innerHTML=`${t('共')} <b>${rows.length}</b> ${t('本')}`
+      + `<span class="sep"></span>${t('本地汇入')} <b>${localN}</b> ${t('本')}`
+      + `<span class="sep"></span>${t('导入')} <b>${impN}</b> ${t('本')}`
+      + `<span class="sep"></span>${t('来源')} <b>${srcIds.length}</b> ${t('个')}`
+      + (view.length!==rows.length?`<span class="sep"></span>${t('当前筛选')} <b>${view.length}</b> ${t('本')}`:'');
+  }
+
+  if(elEmpty) elEmpty.style.display=rows.length?'none':'';
+  if(elTip) elTip.textContent='';
+
+  if(!elList) return;
+  if(!rows.length){ elList.innerHTML=''; updateHdSub(); return; }
+  if(!view.length){
+    elList.innerHTML=`<div class="rempty" style="padding:40px 20px"><b>${t('当前筛选下没有记录')}</b>${t('换一个分类或来源看看。')}</div>`;
+    updateHdSub(); return;
+  }
+
+  const sorted=view.slice().sort((a,b)=>{
+    const ca=catRank(a.cat||'未分类'), cb=catRank(b.cat||'未分类');
+    if(ca!==cb) return ca-cb;
+    const ra=b.rating10||0, rb=a.rating10||0;
+    if(ra!==rb) return ra-rb;
+    return (a.title||'').localeCompare(b.title||'','zh-CN');
+  });
+  /* 一次性把上千张卡片塞进 DOM 会明显卡；超过上限时只渲染前 N 条并提示用筛选缩范围 */
+  const LIMIT=400;
+  const shown=sorted.slice(0,LIMIT);
+  const moreTip=sorted.length>LIMIT
+    ? `<div class="mini" style="padding:12px 4px">${LANG==='en'
+        ? `Showing the first ${LIMIT} of ${sorted.length}. Use the filters on the left to narrow it down.`
+        : `仅显示前 ${LIMIT} 条（共 ${sorted.length} 条），用左侧分类或来源缩小范围。`}</div>`
+    : '';
+
+  elList.innerHTML=shown.map(r=>{
+    const chips=[];
+    (r.sources||[]).forEach(s=>chips.push(`<span class="chip src">${esc(srcLabel(s))}</span>`));
+    chips.push(`<span class="chip">${esc(catLabel(r.cat||'未分类'))}</span>`);
+    if(r.rating10) chips.push(`<span class="chip">${t('评分')} ${Number(r.rating10).toFixed(1)}</span>`);
+    if(r.rate) chips.push(`<span class="chip rate">${t('我的')} ${fmtStars(r.rate)} ${t('星')}</span>`);
+    return `<div class="rcard">
+      <div class="rbody">
+        <div class="rnm">${esc(r.title)}</div>
+        ${r.author?`<div class="rau">${esc(r.author)}</div>`:''}
+        <div class="rchips">${chips.join('')}</div>
+        ${r.comment?`<div class="rnote">${esc(r.comment)}</div>`:''}
+      </div>
+      <div class="racts">
+        <select class="rsel" data-rset="${esc(r.rid)}" title="${esc(t('给这本书换一个「我的阅读分类」；只影响这里，不动本地书库分类'))}">${readingCatOptions(r.cat||'未分类')}</select>
+        ${r.local?'':`<button class="mini-btn" data-rdel="${esc(r.rid)}">${t('移除')}</button>`}
+      </div>
+    </div>`;
+  }).join('') + moreTip;
+
+  elList.querySelectorAll('[data-rset]').forEach(sel=>{
+    sel.onchange=()=>{
+      const rid=sel.dataset.rset, c=sel.value;
+      if(c==='未分类') delete RP.cats[rid]; else RP.cats[rid]=c;
+      saveReading(true); invalidateReading(); renderReading();
+    };
+  });
+  elList.querySelectorAll('[data-rdel]').forEach(b=>{
+    b.onclick=()=>{ removeReadingRecord(b.dataset.rdel); };
+  });
+  updateHdSub();
+}
+
+/* ---------- 改 / 删 ---------- */
+function removeReadingRecord(rid){
+  const rec=RP.records.find(r=>r.rid===rid);
+  if(!rec) return;
+  if(!confirm(LANG==='en'
+    ? 'Remove this record from the reading list?\nOnly affects this page, no file is touched.'
+    : '从「我的阅读清单」移除这条记录？\n只影响这里，不动本地电子书文件。')) return;
+  RP.records=RP.records.filter(r=>r.rid!==rid);
+  delete RP.cats[rid];
+  saveReading(true); invalidateReading(); renderReading();
+  toast(t('已移除该记录'));
+}
+function removeReadingSource(sid){
+  if(!sid || sid===R_LOCAL) return;
+  const s=(RP.sources||[]).find(x=>x.id===sid);
+  const n=RP.records.filter(r=>(r.sources||[]).indexOf(sid)>=0).length;
+  if(!confirm((LANG==='en'?'Remove source "':'移除来源「')+(s&&(s.label||s.file)||sid)
+    +(LANG==='en'?'" and its ':'」及其 ')+n+(LANG==='en'?' records?':' 条记录？')
+    +'\n'+(LANG==='en'?'Only affects this page.':'只影响「我的阅读清单」，不动本地电子书文件。'))) return;
+  const keep=[];
+  RP.records.forEach(r=>{
+    const ss=(r.sources||[]).filter(x=>x!==sid);
+    if(!ss.length) return;                        // 唯一来源被移除 → 记录一并移除
+    r.sources=ss;
+    r.srcIds=(r.srcIds||[]).filter(x=>String(x).indexOf(sid+':')!==0);
+    keep.push(r);
+  });
+  RP.records=keep;
+  RP.sources=(RP.sources||[]).filter(x=>x.id!==sid);
+  if(RF.src===sid) RF.src='全部';
+  saveReading(true); invalidateReading(); renderReading();
+  toast(t('已移除该来源的记录'));
+}
+
+/* 把备份里的阅读记录合并进来：按书籍合并，不覆盖已有非空字段 */
+function mergeReadingBundle(rd){
+  if(!rd || typeof rd!=='object') return {added:0,merged:0};
+  const incoming=Array.isArray(rd.records)?rd.records:[];
+  const srcs=Array.isArray(rd.sources)?rd.sources:[];
+  const cats=(rd.cats && typeof rd.cats==='object')?rd.cats:{};
+  let added=0, merged=0;
+  if(incoming.length){
+    const res=RM
+      ? RM.ingest(RP.records,incoming)
+      : {records:RP.records.concat(incoming), added:incoming.length, merged:0};
+    RP.records=res.records; added=res.added; merged=res.merged;
+  }
+  const have=new Set((RP.sources||[]).map(s=>s.id));
+  srcs.forEach(s=>{
+    if(s && s.id && !have.has(s.id)){ RP.sources.push(s); have.add(s.id); }
+  });
+  Object.keys(cats).forEach(k=>{ if(!(k in RP.cats)) RP.cats[k]=cats[k]; });
+  saveReading(true);
+  invalidateReading();
+  return {added:added, merged:merged};
+}
+
+/* ---------- 导入 ---------- */
+function baseNameOf(file){
+  const s=String(file||'').split(/[\\/]/).pop()||'';
+  const dot=s.lastIndexOf('.');
+  const stem=dot>0?s.slice(0,dot):s;
+  return stem.trim().slice(0,40) || '阅读记录';
+}
+async function importReadingFiles(files){
+  if(!RM){ toast(t('解析模块未加载，请刷新页面')); return; }
+  let added=0, merged=0, skipped=0, dupFile=0, bad=0;
+  const notes=[];
+  for(const f of files){
+    if(f.size>60*1024*1024){ notes.push(`${f.name} ${t('超过 60MB，已跳过')}`); bad++; continue; }
+    let text='';
+    try{
+      const buf=await f.arrayBuffer();
+      text=RM.decodeText(buf).text;
+    }catch(e){ notes.push(`${f.name} ${t('读取失败')}`); bad++; continue; }
+    try{
+      const head=text.slice(0,4000);
+      if(/"kind"\s*:\s*"ebooklib_library_backup"/.test(head) || /"kind"\s*:\s*"ebooklib_library_data"/.test(head)){
+        notes.push(`${f.name} ${t('是书库备份文件，请用本地书库的「恢复」')}`); bad++; continue;
+      }
+    }catch(e){}
+    const fp=RM.fingerprint(text);
+    if((RP.sources||[]).some(s=>s.fp && s.fp===fp)){ dupFile++; continue; }   // 同一份文件重复导入 → 整批跳过
+
+    let rows=[];
+    try{ rows=RM.parseAny(f.name,text,{authorHint:authorHint}); }
+    catch(e){ notes.push(`${f.name} ${t('解析失败')}`); bad++; continue; }
+    if(!rows.length){ notes.push(`${f.name} ${t('里没有可识别的书目')}`); skipped++; continue; }
+
+    const sid='s'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    const made=RM.toRecords(rows,sid);
+    const res=RM.ingest(RP.records,made.records);
+    RP.records=res.records;
+    added+=res.added; merged+=res.merged; skipped+=res.skipped;
+    RP.sources.push({
+      id:sid, label:baseNameOf(f.name), file:f.name,
+      fp:fp, importedAt:Date.now(), count:made.records.length
+    });
+  }
+  saveReading(true);
+  invalidateReading();
+  renderReading();
+
+  const parts=[];
+  if(added) parts.push(t('新增 ')+added+t(' 本'));
+  if(merged) parts.push(t('合并 ')+merged+t(' 本'));
+  if(skipped) parts.push(t('跳过 ')+skipped+t(' 条'));
+  if(dupFile) parts.push(t('重复文件 ')+dupFile+t(' 个（已跳过）'));
+  if(bad) parts.push(t('失败 ')+bad+t(' 个'));
+  toast(parts.length?parts.join(' · '):t('没有新增任何记录'));
+  if(notes.length) setTimeout(()=>toast(notes.join('；'),4200),1000);
+}
+document.getElementById('btnReadImport').onclick=()=>{
+  const el=document.getElementById('readImpFile');
+  if(el) el.click();
+};
+document.getElementById('readImpFile').onchange=async(e)=>{
+  const files=[...(e.target.files||[])];
+  e.target.value='';                       // 复位，选同一个文件也能再触发
+  if(files.length) await importReadingFiles(files);
+};
+document.getElementById('readingCats').addEventListener('click',e=>{
+  const el=e.target.closest('[data-rcat]'); if(!el) return;
+  RF.cat=el.dataset.rcat||'全部';
+  renderReading();
+});
+document.getElementById('readingSources').addEventListener('click',e=>{
+  const rm=e.target.closest('[data-rmsrc]');
+  if(rm){ e.stopPropagation(); removeReadingSource(rm.dataset.rmsrc); return; }
+  const el=e.target.closest('[data-rsrc]'); if(!el) return;
+  RF.src=el.dataset.rsrc||'全部';
+  renderReading();
+});
+
+/* ---------- 导出「我的阅读清单」（复制与下载共用同一份文本） ---------- */
+function buildReadingNote(){
+  const rows=buildRows();
+  if(!rows.length) return '';
+  const groups=new Map();
+  rows.forEach(r=>{
+    const c=r.cat||'未分类';
+    if(!groups.has(c)) groups.set(c,[]);
+    groups.get(c).push(r);
+  });
+  const order=[...groups.keys()].sort((a,b)=>
+    catRank(a)-catRank(b) || groups.get(b).length-groups.get(a).length);
+  groups.forEach(list=>list.sort((a,b)=>{
+    const ra=b.rating10||0, rb=a.rating10||0;
+    if(ra!==rb) return ra-rb;
+    return (a.title||'').localeCompare(b.title||'','zh-CN');
+  }));
+
+  const d=new Date();
+  const rateLine=r=>{
+    let s=`${t('评分')} ${r.rating10?Number(r.rating10).toFixed(1):(LANG==='en'?'—':t('无'))}`
+      +` | ${t('我的评分：')}${r.rate?fmtStars(r.rate)+t(' 星'):'—'}`;
+    const nt=String(r.comment||'').trim();
+    if(nt) s+=`| ${t('我的评价：')}${nt.replace(/\r?\n/g,'\n    ')}`;
+    return s;
+  };
+  const disp=r=>{
+    if(!r.author) return r.title;
+    return r.title+' · '+r.author;
+  };
+
+  let txt=`${t('我的阅读 · 全渠道已读清单')}\n${t('生成时间 ')}${d.toLocaleString(LANG==='en'?'en-US':'zh-CN')}\n`
+    +`${t('共')} ${rows.length}${t(' 条 · ')}${order.length}${t(' 个分类（分类为「我的阅读」独立分类，与本地电子书分类无关；仅供本人参考）')}\n`;
+  txt+='='.repeat(70)+'\n';
+  let n=0;
+  order.forEach(c=>{
+    const list=groups.get(c);
+    txt+=`## ${t('已阅 · ')}${catLabel(c)} · ${list.length}${t(' 本')}\n\n`;
+    list.forEach(r=>{
+      n++;
+      txt+=`[${String(n).padStart(4,'0')}] ${disp(r)}\n${rateLine(r)}\n\n`;
+    });
+  });
+  return txt;
+}
+function copyReadingNote(){
+  const txt=buildReadingNote();
+  if(!txt){ toast(t('还没有阅读记录可以复制')); return; }
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(txt).then(
+      ()=>toast(t('已复制阅读清单，可直接粘贴给 AI')),
+      ()=>fallback(txt)
+    );
+  }else fallback(txt);
+}
+function exportReadingNote(){
+  const txt=buildReadingNote();
+  if(!txt){ toast(t('还没有阅读记录可以导出')); return; }
+  dl(`我的阅读清单_${dateStamp()}.txt`,txt);
+  toast((LANG==='en'?'Exported ':'已导出 ')+`我的阅读清单_${dateStamp()}.txt`);
+}
+document.getElementById('btnNoteCopy').onclick=copyReadingNote;
+document.getElementById('btnNote').onclick=exportReadingNote;
 
 /* ---- 目录写权限 ---- */
 async function pickDirWrite(){
@@ -2662,8 +3431,25 @@ async function doDelete(){
 
 /* 恢复上一批功能已移除：删除即彻底从书单移除，隔离目录副本由你手动清空，不再保留可恢复记录 */
 
-document.getElementById('btnClean').onclick=()=>setView(VIEW==='clean'?'list':'clean');
 document.getElementById('btnCleanBack').onclick=()=>setView('list');
+/* 主页面切换：两个标题块互斥点亮 */
+document.getElementById('tabLibrary').onclick=()=>setTab('library');
+document.getElementById('tabReading').onclick=()=>setTab('reading');
+/* 书库整理下拉：原按钮保留 DOM + handler，菜单项只负责触发，不复制逻辑 */
+document.getElementById('ddOrganizeBtn').onclick=e=>{ e.stopPropagation(); toggleOrganize(); };
+document.getElementById('ddOrganizeMenu').onclick=e=>{
+  const it=e.target.closest('.dd-item'); if(!it) return;
+  const act=it.dataset.act;
+  closeOrganize();
+  if(act==='sync') document.getElementById('btnSync').click();
+  else if(act==='health') document.getElementById('btnHealth').click();
+  else if(act==='clean'){ setTab('library'); setView('clean'); }
+};
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#ddOrganize')) closeOrganize();
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeOrganize(); });
+/* 阅读页三个按钮的绑定在「我的阅读清单 数据层」里完成（导入 / 复制 / 导出） */
 document.getElementById('btnCleanNone').onclick=()=>{ CLEAN_SEL.clear(); KEEPS.clear(); renderClean(); };
 document.getElementById('btnCleanDelete').onclick=openConfirm;
 /* 恢复上一批按钮已移除 */
@@ -2680,8 +3466,6 @@ document.getElementById('trashPath').onclick=copyTrashPath;
   };
   renderTrashBox();
 })();
-placeFab();
-window.addEventListener('resize',placeFab);
 document.getElementById('btnLang').onclick=()=>setLang(LANG==='zh'?'en':'zh');
 document.getElementById('cClose').onclick=closeConfirm;
 document.getElementById('cCancel').onclick=closeConfirm;
@@ -2689,7 +3473,99 @@ document.getElementById('cScrim').onclick=closeConfirm;
 document.getElementById('cAck').onchange=e=>{ document.getElementById('cGo').disabled=!e.target.checked; };
 document.getElementById('cGo').onclick=()=>{ closeConfirm(); doDelete(); };
 
+/* ---------- 简介：2 行 + 点开看全文（浮层，不改变卡片尺寸） ---------- */
+let OLPOP_SK=null;
+let OLPOP_T=0;      // 打开时刻：刚打开的 250ms 内忽略滚动，避开浏览器的自动滚动
+
+function cleanIntro(s){
+  return String(s==null?'':s)
+    .replace(/\r/g,'')
+    .replace(/[.·。]{6,}/g,'\n')          // 豆瓣简介里的「......」分隔线
+    .replace(/[（(]\s*(展开全部|收起)\s*[)）]/g,'')   // 豆瓣自带的尾巴，不是正文
+    .replace(/[ \t\u00a0]{2,}/g,' ')
+    .replace(/\n{3,}/g,'\n\n')
+    .trim();
+}
+function introFull(b){
+  if(!b) return '';
+  const db=b.douban||{};
+  const full=cleanIntro(db.intro||'');
+  const short=b.oneline||b.intro_short||'';
+  return full && full.length>=short.length ? full : cleanIntro(short);
+}
+function markTruncIntro(){
+  const els=[];
+  document.querySelectorAll('#list .oneline').forEach(el=>{
+    const txt=el.textContent.trim();
+    if(!txt) return;
+    // 两种情况要查：文字多到可能超过两行；或数据层已经硬切（结尾是省略号）
+    const maybeLong=txt.length > Math.max(12, Math.floor(el.clientWidth/13));
+    const dataCut=/(…|\.\.\.)$/.test(txt);
+    if(maybeLong||dataCut) els.push(el);
+  });
+  if(!els.length) return;
+  // 先读后写，避免逐条 classList 触发重复回流
+  const over=els.map(el=>el.scrollHeight-el.clientHeight>1);
+  els.forEach((el,i)=>{
+    let more=over[i];
+    if(!more){
+      // 兜底：数据层给的就是截短版时，CSS 不会溢出（宽屏两行正好塞满），
+      // 但确实还有更长的完整简介可看 —— 这种情况也要给「点开看全文」的提示
+      const sk=el.dataset.ol;
+      const b=sk?BY_SK.get(sk):null;
+      if(b) more=introFull(b).length > el.textContent.trim().length+8;
+    }
+    if(!more) return;
+    el.classList.add('trunc');
+    el.title=t('点开看完整简介');
+  });
+}
+function closeIntroPop(){
+  if(OLPOP_SK===null) return;
+  OLPOP_SK=null;
+  document.getElementById('olPop').classList.remove('show');
+}
+function openIntroPop(sk, anchor){
+  const b=BY_SK.get(sk); if(!b) return;
+  const full=introFull(b);
+  if(!full) return;
+  const pop=document.getElementById('olPop');
+  document.getElementById('olPopTitle').textContent=dispName(b);
+  document.getElementById('olPopBody').textContent=full;
+  const fromDouban=!!cleanIntro((b.douban||{}).intro||'');
+  document.getElementById('olPopSrc').textContent=fromDouban?t('豆瓣简介'):t('一句话介绍');
+  document.getElementById('olPopHint').textContent=t('Esc 关闭');
+  pop.classList.add('show');
+  OLPOP_SK=sk;
+  OLPOP_T=Date.now();
+
+  const r=anchor.getBoundingClientRect();
+  const maxW=Math.min(720, window.innerWidth-24);
+  const w=Math.min(Math.max(r.width, 320), maxW);
+  pop.style.width=w+'px';
+  pop.style.left=Math.max(12, Math.min(r.left, window.innerWidth-w-12))+'px';
+  const ph=pop.offsetHeight;
+  let top=r.bottom+8;
+  if(top+ph>window.innerHeight-12) top=Math.max(12, r.top-ph-8);   // 下方放不下就翻到上方
+  pop.style.top=top+'px';
+}
+document.getElementById('olPopClose').onclick=closeIntroPop;
+document.addEventListener('click', e=>{
+  if(OLPOP_SK===null) return;
+  if(e.target.closest('#olPop')||e.target.closest('.oneline.trunc')) return;
+  closeIntroPop();
+}, true);
+window.addEventListener('scroll', ()=>{
+  if(OLPOP_SK===null) return;
+  if(Date.now()-OLPOP_T<250) return;   // 刚弹出来时的自动滚动不算用户滚动
+  closeIntroPop();
+}, {passive:true});
+window.addEventListener('resize', closeIntroPop);
+
 function bind(){
+  document.querySelectorAll('#list .oneline.trunc').forEach(el=>{
+    el.onclick=()=>openIntroPop(el.dataset.ol, el);
+  });
   document.querySelectorAll('[data-pick]').forEach(el=>{
     el.onclick=e=>{
       const sk=el.dataset.pick;
@@ -2869,7 +3745,8 @@ function initDrawer(){
   document.getElementById('scrim').onclick=closeDrawer;
   document.addEventListener('keydown',(e)=>{
     if(e.key!=='Escape') return;
-    if(WELCOME_OPEN) closeWelcome(true);
+    if(OLPOP_SK!==null) closeIntroPop();
+    else if(WELCOME_OPEN) closeWelcome(true);
     else if(DRAW) closeDrawer();
     else if(document.getElementById('hModal').classList.contains('show')) closeHealth();
   });
@@ -2988,11 +3865,18 @@ async function exportBackup(){
     state:Object.assign({},state,{note:{}}),
     notes,
   };
+  /* 阅读清单是独立数据（独立键、独立分类），作为可选顶层字段一起带走；
+     schema 仍是 4，旧版备份没有这个字段也能正常恢复 */
+  if(RP && ((RP.records||[]).length || (RP.sources||[]).length)){
+    pack.reading={__v:1, sources:RP.sources, cats:RP.cats, records:RP.records};
+  }
   const text=JSON.stringify(pack,null,1);
   const mb=text.length/1048576;
   const nRate=Object.keys(pack.state.rating||{}).length;
   const nNote=Object.keys(notes).length;
-  const brief=`${BOOKS.length} 本书 + ${SCANS.length} 个图册 · ${nRate} 个我的评分 · ${nNote} 条笔记`;
+  const nRec=pack.reading?pack.reading.records.length:0;
+  const brief=`${BOOKS.length} 本书 + ${SCANS.length} 个图册 · ${nRate} 个我的评分 · ${nNote} 条笔记`
+    +(nRec?` · ${nRec} 条阅读记录`:'');
   try{
     if(handle){
       const w=await handle.createWritable();
@@ -3073,7 +3957,7 @@ function doCopy(){
 }
 document.getElementById('selAll').onclick=()=>{ filtered().forEach(b=>sel.add(b.sk)); render(); };
 document.getElementById('selNone').onclick=()=>{ sel.clear(); render(); };
-document.getElementById('btnNote').onclick=exportNote;
+/* btnNote（导出 .txt）已改绑 exportReadingNote，见「我的阅读清单 数据层」 */
 document.getElementById('btnState').onclick=exportBackup;
 document.getElementById('btnSync').onclick=doSync;
 
@@ -3093,7 +3977,7 @@ function updateStoreBadge(){
   const where=IS_FIXED?(location.protocol==='https:'?'固定站点':'固定入口')
     :(location.protocol==='file:'?'本地文件':'端口 '+(location.port||'—'));
   el.textContent=`本机评分 ${n} · ${where}`;
-  el.className='storebadge'+(IS_FIXED?'':' warn');
+  el.className='storebadge lib-only'+(IS_FIXED?'':' warn');   // 保留 lib-only：阅读页不显示本地书库徽标
   el.title=IS_FIXED?'数据存在当前浏览器的这个地址下，点开可查看详情'
     :'⚠ 当前地址不是固定入口，换地址或换浏览器看不到彼此的评分与进度。点开查看';
 }

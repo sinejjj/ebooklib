@@ -500,7 +500,7 @@ def check_public_html():
         return
     with io.open(PUBLIC_HTML, "r", encoding="utf-8") as f:
         html = f.read()
-    for ph in ("__LIBRARY_DATA__", "__SCAN_JS__"):
+    for ph in ("__LIBRARY_DATA__", "__SCAN_JS__", "__EXACTDUP_JS__", "__READINGMERGE_JS__"):
         if ph in html:
             err("公开页结构", "占位符未替换：" + ph)
     m = re.search(r'<script id="LIBRARY_DATA"[^>]*>(.*?)</script>', html, re.S)
@@ -564,6 +564,7 @@ def check_docs():
                 "scripts/build_public.py", "scripts/prepublish_check.py",
                 "scripts/scan_core.js", "scripts/demo_library.json",
                 "scripts/app_template.html", "scripts/verify_readonly.py",
+                "scripts/exactdup.js", "scripts/readingmerge.js",
                 "重新生成清单.bat"]
     missing = [p for p in required if not os.path.exists(os.path.join(ROOT, p))]
     if missing:
