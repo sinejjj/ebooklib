@@ -73,10 +73,24 @@
   var TITLE_CACHE = Object.create(null);
   var AU_CACHE = Object.create(null);
 
-  /* 版本注关键词：出现在括号里就整段删掉（它描述的是「同一本书的哪一版」） */
-  var VER_RE = /(版|修订|新版|典藏|精装|平装|插图|彩图|全译|译本|译注|校注|注释|增订|纪念|出版|印刷|套装|全集|文库)/;
+  /* 版本/影视改编注关键词：出现在括号里就整段删掉（它描述的是「同一本书的哪一版 / 哪次改编」）。
+     跨平台合并（豆瓣 / 微信读书 / 本地书库各一份）时，丛书名、出版社 imprint 也是同一本书的
+     非区分性后缀，必须一并剥掉，否则「血殇（译文纪实）」和「血殇」会被当成两本书。
+     只在括号内部触发（normTitle 的括号剥离循环保证了这一点），不会误伤真书名。 */
+  var VER_RE = /(版|修订|新版|典藏|精装|平装|插图|彩图|全译|译本|译注|校注|注释|增订|纪念|出版|印刷|套装|全集|文库|原著|电视剧|影视|改编|电影|剧集|剧照|同名|热播|网剧|精校|校订|校勘|汇校|增补|补遗|珍藏|限定|签名|毛边|特装|函套|线装|影印|繁体|简体|横排|竖排|足本|全本|未删节|节选|删节|白话|文言|今译|注音|彩印|图文|缩印|大字|袖珍|口袋|普及|导读|译文纪实|译文经典|世纪文景|文景|甲骨文|汗青堂|理想国|读库|后浪|果麦|新经典|三辉|新民说|汉唐阳光|野草|鹿书|贝贝特|青马|湖岸|雅众|大方|未读|磨铁|紫图|博集天卷|读客|知微|华章|图灵|异步|湛庐|99读书人|译林|知日|知中|蓝狮子|白马时光|记忆坊|酷威|中信|三部曲|四部曲|系列|地球往事|文集|选集|作品集|精选|名家|名著|插图本|彩图本|青少版|少年版|学生版|简写|缩写|节本|藏书|精装版|平装版|大字版|注音版|双语|中英对照|商务印书馆|三联|中华书局|人民文学|上海译文|社会科学文献|广西师大|湖南文艺|十月文艺|南海|新世界|江苏文艺|浙江文艺|北京联合|出版社|出版集团|书局|印社|传媒|文化|书店|丛书|书系|译丛|译库|汉译)/;
   /* 卷次：括号里只有「上/中/下/一/二/…/册/第X卷」这类，属于不同册，必须保留 */
   var VOL_RE = /^(第)?[上中下五六七八九十百千\d]+\s*(册|卷|部|篇|集)?$/;
+
+  /* 纯汉字数字的整标题归一成阿拉伯数字（「一九八四」→「1984」）；
+     只处理整串都是数字的情况，不会动到「三体」「一百年的孤独」这类正常书名。 */
+  var CN_DIGIT = { '〇': '0', '零': '0', '一': '1', '二': '2', '三': '3',
+                   '四': '4', '五': '5', '六': '6', '七': '7', '八': '8', '九': '9' };
+  function cnDigitsOnly(t) {
+    if (/^[〇零一二三四五六七八九]+$/.test(t)) {
+      return t.split('').map(function (c) { return CN_DIGIT[c]; }).join('');
+    }
+    return t;
+  }
 
   function normTitle(s) {
     var key = String(s == null ? '' : s);
@@ -98,6 +112,7 @@
     /* 尾部「（全三册）」这类已被上面处理，这里再兜一层空的括号 */
     t = t.replace(/\(\s*\)/g, '').replace(/\[\s*\]/g, '');
     t = t.replace(/\s+/g, ' ').trim().toLowerCase();
+    t = cnDigitsOnly(t);
     TITLE_CACHE[key] = t;
     return t;
   }
@@ -117,7 +132,8 @@
       return x.replace(AU_TAIL, '').trim();
     }).filter(Boolean);
     t = parts.join(',');
-    t = t.replace(/\s+/g, ' ').toLowerCase();
+    /* 作者比较时彻底去掉空白（「理查德 ·普雷斯顿」与「理查德·普雷斯顿」、「J. K. 罗琳」与「J.K.罗琳」应视为同一人） */
+    t = t.replace(/\s+/g, '').toLowerCase();
     AU_CACHE[key] = t;
     return t;
   }
@@ -164,20 +180,36 @@
   }
 
   /* ============================================================
-     3. 分类映射：只认既有的题材名，认不出就留空（归「未分类」）
+     3. 分类映射：13 类题材，认不出就留空（归「未分类」）
+     与 bookclassify.js 保持同一套分类名；那边可用时优先交给它判。
      ============================================================ */
 
   var CAT_LIST = [
     '文学·小说', '科幻·奇幻', '推理·悬疑',
-    '历史·地理', '社会·纪实·新闻', '传记·回忆录·口述',
-    '心理·认知·思维', '设计·艺术·摄影', '政治·哲学·军事',
-    '个人成长·方法论', '商业·经济·管理', '科学·技术·自然'
+    '历史·纪实', '地理·旅行', '社会·文化',
+    '政治·军事', '哲学·宗教', '心理·认知',
+    '商业·经济·管理', '科学·技术·自然', '设计·艺术·摄影',
+    '个人成长·方法论'
   ];
+
+  function classifier() {
+    if (typeof require === 'function') {
+      try { return require('./bookclassify.js'); } catch (e) { /* 浏览器无 require */ }
+    }
+    var g = (typeof globalThis !== 'undefined') ? globalThis
+          : (typeof window !== 'undefined' ? window : null);
+    return (g && g.EbooklibClassify) || null;
+  }
 
   function mapCat(raw) {
     var s = cleanInline(raw);
     if (!s || s.length > 24) return '';
     if (CAT_LIST.indexOf(s) >= 0) return s;
+    var BC = classifier();
+    if (BC) {
+      var hit = BC.mapRaw(s);
+      if (hit) return hit;
+    }
     for (var i = 0; i < CAT_LIST.length; i++) {
       var c = CAT_LIST[i];
       if (c.indexOf(s) >= 0 || s.indexOf(c) >= 0) return c;
@@ -210,7 +242,9 @@
     'summary', 'content', '评价', '短评', '书评', '读后感', '备注', '想法', '摘录', '评论']);
   reg('id', ['id', 'bookid', 'book_id', 'uid', 'sid', '书籍id', '书籍编号', '编号', '标识', '记录id']);
   reg('url', ['url', 'link', 'href', '链接', '地址', '详情页', '详情链接']);
-  reg('cat', ['cat', 'category', 'genre', 'tag', 'tags', 'class', '分类', '类别', '标签', '题材']);
+  reg('cat', ['cat', 'category', 'genre', 'tag', 'tags', 'class', 'subject', 'subjects',
+    '分类', '类别', '标签', '题材', '图书分类', '书籍分类', '图书类别', '书籍类别',
+    '分类名称', '类别名称', '题材分类', '标签列表', '豆瓣分类', '书单分类']);
   reg('read', ['read', 'finished', 'done', 'status', 'isread', '已读', '状态', '读完', '阅读状态']);
 
   function fieldVal(norm, field) {
@@ -231,6 +265,7 @@
 
   function looksLikeAuthor(s) {
     if (!s) return false;
+    if (s.length < 2) return false;                  /* 单字几乎不可能是作者，「达」不该被当成作者 */
     if (s.length > 14) return false;
     if (/[，。：；！？,.:;!?]/.test(s)) return false;
     if (/\s/.test(s) && s.length > 8) return false;
@@ -239,6 +274,15 @@
 
   /* hint: 可选函数，判断某段是否是「已知作者」（由调用方用本地书库作者集提供）。
      命中 hint 时拆分最可靠；无 hint 时用保守启发式，宁可整行当书名也不乱拆。 */
+  /* 去掉行首编号：「1.书名」「10、书名」「100)书名」。
+     只认 1-4 位数字 + 分隔符，1984 / 1Q84 / 三体2 保持原样。 */
+  var LEAD_INDEX_RE = /^\d{1,4}\s*[.、．)）]\s*(\S[\s\S]*)$/;
+  function stripIndex(s) {
+    var t = String(s == null ? '' : s).trim();
+    var m = t.match(LEAD_INDEX_RE);
+    return m ? m[1].trim() : t;
+  }
+
   function splitName(s, hint) {
     var rawStr = String(s == null ? '' : s).replace(/^[\s\-*•·]+/, '');
     if (!cleanInline(rawStr)) return { title: '', author: '' };
@@ -253,7 +297,10 @@
       return { title: cleanInline(q[0]), author: cleanInline(q.slice(1).join(' ')) };
     }
 
-    var parts = t.split(/\s*·\s*/).map(cleanInline).filter(Boolean);
+    /* 「·」只有在旁边带空格时才当分隔符。
+       译名本身就用间隔号（达·芬奇密码 / 安娜·卡列尼娜），没有空格时整行按书名处理，
+       否则会把「达·芬奇密码」拆成书名「达」+ 作者「芬奇密码」。 */
+    var parts = t.split(/(?:\s+·\s*|\s*·\s+)/).map(cleanInline).filter(Boolean);
     if (parts.length < 2) return { title: t, author: '' };
 
     /* 「作者 · 书名」→ 前 n-1 段是作者；「书名 · 作者」→ 后 n-1 段是作者。
@@ -265,8 +312,12 @@
 
     if (typeof hint === 'function') {
       var hHead = false, hRest = false;
-      try { hHead = !!hint(head) || !!hint(first); } catch (e) { hHead = false; }
-      try { hRest = !!hint(rest) || !!hint(last); } catch (e) { hRest = false; }
+      var hitHint = function (h) {
+        if (!h || h.length < 2) return false;        /* 单字段不当作作者 */
+        try { return !!hint(h); } catch (e) { return false; }
+      };
+      hHead = hitHint(head) || hitHint(first);
+      hRest = hitHint(rest) || hitHint(last);
       if (hHead && !hRest) return { title: last, author: head };
       if (hRest && !hHead) return { title: first, author: rest };
     }
@@ -280,7 +331,7 @@
        只有「一侧短得像人名、另一侧明显不像」时才拆，否则整行当书名，交给 hint 兜底 */
     var headLike = looksLikeAuthor(head), restLike = looksLikeAuthor(rest);
     if (headLike && !restLike) return { title: rest, author: head };
-    if (restLike && !headLike) return { title: head, author: rest };
+    if (restLike && !headLike && head.length >= 2) return { title: head, author: rest };
     return { title: t, author: '' };
   }
 
@@ -320,6 +371,21 @@
           rec.catRaw = curCat;
           out.push(rec);
           last = rec;
+        }
+        continue;
+      }
+
+      /* 书条：纯序号前缀「1.书名」「10、书名」「100)书名」
+         只认 1-4 位数字 + 分隔符，1984 / 1Q84 / 三体2 这类真书名不会被切。 */
+      var mNum = ln.match(/^(\d{1,4})\s*[.、．)）]\s*(\S[\s\S]*)$/);
+      if (mNum) {
+        seenItem = true;
+        var rec2 = splitName(mNum[2], hint);
+        if (rec2.title) {
+          rec2.catRaw = curCat;
+          rec2.srcId = rec2.srcId || mNum[1];
+          out.push(rec2);
+          last = rec2;
         }
         continue;
       }
@@ -574,12 +640,72 @@
     return out;
   }
 
-  /* 三级优先级：ISBN（双方都有）→ 同来源同书籍 id → 规范化书名+作者（都必须非空相等） */
+  /* 卷次标记：括号里只有「上/中/下/数字+册卷」这类不同册，绝不能并入同一本 */
+  var _VOL_RE = /(第?\s*[一二三四五六七八九十百千\d]+\s*(册|卷|部|篇|辑)?)|[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]|(^|[^一-龥])(上|中|下)(卷|册|部|集)?($|[^一-龥])/;
+  function hasVolume(t) {
+    return _VOL_RE.test(String(t == null ? '' : t));
+  }
+  /* 宽松匹配的标题核心：在 normTitle 基础上再剥掉所有残留括号（卷次除外，已在 normTitle 保留） */
+  function coreTitle(t) {
+    return normTitle(t)
+      .replace(/[\(\[][^()\[\]]{0,30}[\)\]]/g, '')
+      .replace(/\s+/g, ' ').trim();
+  }
+  var _SUB_SEP = '：:—\-－,，. 。. ';
+
+  /* 宽松键（只用于最后兜底，不用于显示/索引）：
+     1) 括注里若正好是该作者名（「超新星纪元（刘慈欣）」）→ 视作作者注记剥掉；
+        括注是卷次（上/中/下/第X册）→ 保留，绝不能并不同册；
+        其它括注（如「人类简史(知识漫画)」）→ 保留内容，避免误并衍生本。
+     2) 去掉所有分隔符（空格/：·—_,，、.()[]），把「银河帝国 基地七部曲」
+        「银河帝国：基地七部曲」「银河帝国(基地七部曲)」归一到同一键。
+     3) 标题尾部若就是作者名（「超新星纪元·刘慈欣」）→ 剥掉。 */
+  function looseKey(t, author) {
+    var au = normAuthor(author);
+    var s = normTitle(t);
+    s = s.replace(/[\(\[]([^()\[\]]{1,30})[\)\]]/g, function (m, inner) {
+      if (VOL_RE.test(inner.trim())) return m;            /* 卷次保留 */
+      var ni = normAuthor(inner);
+      if (au && ni && (ni === au || au.indexOf(ni) >= 0 || ni.indexOf(au) >= 0)) return ''; /* 作者注记 */
+      return m;                                           /* 其它括注保留内容 */
+    });
+    s = s.replace(/[\s:：·・—–－_\-_,，、.。()\[\]]/g, '');
+    if (au && s.length > au.length && s.slice(-au.length) === au) s = s.slice(0, -au.length);
+    return s;
+  }
+
+  /* 作者是否相容：相等，或「较短的是较长的尾段」且较长一方原串含姓名分隔符
+     （「普雷斯顿」⊂「理查德·普雷斯顿」、「奥威尔」⊂「乔治·奥威尔」、「罗琳」⊂「J.K. 罗琳」）。
+     尾段匹配只对「译名/西文名」（带 · . 空格）启用，避免「春树」误并「村上春树」这类本土名。 */
+  function hasNameSep(s) {
+    return /[·・.\s]/.test(String(s == null ? '' : s));
+  }
+  function authorCompatible(aOrig, bOrig) {
+    var x = normAuthor(aOrig), y = normAuthor(bOrig);
+    if (!x || !y) return true;                       /* 任一方缺作者 → 视为相容 */
+    if (x === y) return true;
+    var s = x.length <= y.length ? x : y;
+    var l = x.length <= y.length ? y : x;
+    var lOrig = (x.length <= y.length) ? String(bOrig == null ? '' : bOrig)
+                                       : String(aOrig == null ? '' : aOrig);
+    if (s.length >= 2 && l.length > s.length && l.slice(-s.length) === s && hasNameSep(lOrig)) return true;
+    return false;
+  }
+
+  /* 判定「同一本书」，跨平台（本地书库 / 豆瓣 / 微信读书…）都靠它合并：
+     1) 双方都有 ISBN 且相同 → 同一本（不同版次不再因为 ISBN 不同就拆成两卡）
+     2) 同一来源的同一条目 id → 同一本
+     3) 规范化书名一致：双方作者都有则必须相容；任一方缺作者（甚至两边都缺）
+        也按同一本处理——跨平台导出经常只有书名没有作者，
+        不合并就会出现「豆瓣 1984」「微信读书 1984」两张卡。
+     4) 宽松档：短书名是长书名的「主标题 + 副标题」关系（如本地「血殇」与导入
+        「血殇:埃博拉的过去、现在和未来」），且两边都没有卷次标记、作者相容 → 合并。
+        以分隔符「:：—,，.」判定副标题起点，避免「中国」误并「中国哲学史」这类。 */
   function sameBook(a, b) {
     if (!a || !b) return false;
     var ia = a.isbn ? normIsbn(a.isbn) : '';
     var ib = b.isbn ? normIsbn(b.isbn) : '';
-    if (ia && ib) return ia === ib;                  /* 都有 ISBN：相等合并，不等直接判不同 */
+    if (ia && ib && ia === ib) return true;
 
     var sa = a.srcIds || [], sb = b.srcIds || [];
     for (var i = 0; i < sa.length; i++) {
@@ -587,10 +713,29 @@
     }
 
     var ta = normTitle(a.title), tb = normTitle(b.title);
-    if (!ta || ta !== tb) return false;
-    var aa = normAuthor(a.author), ab = normAuthor(b.author);
-    if (!aa || !ab) return false;                    /* 任一方作者缺失 → 不确定 → 不合并 */
-    return aa === ab;
+    if (ta && ta === tb) {
+      var aa = normAuthor(a.author), ab = normAuthor(b.author);
+      if (aa && ab) return authorCompatible(a.author, b.author);   /* 都有作者：必须相容 */
+      return true;                                   /* 缺作者：书名一致即视为同一本 */
+    }
+
+    /* 宽松档：主标题 + 副标题（如「血殇」与「血殇:埃博拉的过去…」） */
+    var ca = coreTitle(a.title), cb = coreTitle(b.title);
+    if (ca && cb && ca !== cb && ca.length >= 2) {
+      var short = ca.length <= cb.length ? ca : cb;
+      var long = ca.length <= cb.length ? cb : ca;
+      var sep = long.charAt(short.length);
+      if (long.indexOf(short) === 0 && _SUB_SEP.indexOf(sep) >= 0
+          && !hasVolume(a.title) && !hasVolume(b.title)) {
+        var ra = normAuthor(a.author), rb = normAuthor(b.author);
+        if (ra && rb) return authorCompatible(a.author, b.author);
+        return true;                                 /* 任一方缺作者：主副标题关系即合并 */
+      }
+    }
+    /* 最后兜底：宽松键完全相同（分隔符/作者括注/尾部作者名差异都抹掉），且作者相容 */
+    var la = looseKey(a.title, a.author), lb = looseKey(b.title, b.author);
+    if (la && la === lb) return authorCompatible(a.author, b.author);
+    return false;
   }
 
   function mergeRecords(a, b) {
@@ -750,6 +895,7 @@
     /* 其他 */
     decodeText: decodeText,
     safeUrl: safeUrl,
-    CAT_LIST: CAT_LIST
+    CAT_LIST: CAT_LIST,
+    stripIndex: stripIndex
   };
 });

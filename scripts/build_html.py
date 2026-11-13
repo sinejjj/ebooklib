@@ -32,6 +32,22 @@ BACKUP = os.path.join(ROOT, "data", "_backup_20261027", "library_final.json")
 VOTES_THRESHOLD = 1000
 BOOK_EXT = [".mobi", ".epub", ".pdf", ".azw3", ".azw", ".kfx", ".txt", ".doc", ".docx"]
 
+# 分类只允许落在 13 类 + 未分类。老数据 / 手工覆写里残留的旧分类名在这里收口，
+# 否则侧栏会冒出「历史·地理」这种已经不是 13 类的分组。
+VALID_CATS = {
+    "文学·小说", "科幻·奇幻", "推理·悬疑", "历史·纪实", "地理·旅行", "社会·文化",
+    "政治·军事", "哲学·宗教", "心理·认知", "商业·经济·管理", "科学·技术·自然",
+    "设计·艺术·摄影", "个人成长·方法论", "未分类",
+}
+OLD_CAT = {
+    "历史·地理": "历史·纪实",
+    "心理·认知·思维": "心理·认知",
+    "社会·纪实·新闻": "社会·文化",
+    "传记·回忆录·口述": "历史·纪实",
+    "政治·哲学·军事": "政治·军事",
+    "待归类·资料杂项": "未分类",
+}
+
 
 def load_famous():
     names = []
@@ -179,7 +195,13 @@ def main():
         build_public.main()
         return
     public = False
-    src = load_json(MERGED)
+    # --from-final：把当前成品用的数据原样当输入，只重新套前端模板。
+    # 只改了 HTML/JS 而书单没变时用它，避免又从 books.merged.json 重算一遍
+    # （merged 可能是旧版本，重算会把后来的加工覆盖掉）。
+    if "--from-final" in sys.argv:
+        src = load_json(os.path.join(ROOT, "data", "library_final.json"))
+    else:
+        src = load_json(MERGED)
     if not src or not src.get("books"):
         src = load_json(RAW)
     if not src:
@@ -223,6 +245,9 @@ def main():
             b["category"] = o["category"]
         if o.get("title"):
             b["title"] = o["title"]
+        # 收口：13 类之外的一律归位，侧栏不出现历史分类名
+        if b.get("category") not in VALID_CATS:
+            b["category"] = OLD_CAT.get(b.get("category"), "未分类")
         return b
 
     books = [apply(b) for b in src.get("books", [])]
@@ -269,7 +294,7 @@ def main():
         "entries": len(out_books) + len(out_scans),
         "rated": sum(1 for b in out_books if b.get("rating")),
         "famous": sum(1 for b in out_books + out_scans if b.get("author_famous")),
-        "pending": sum(1 for b in out_books + out_scans if b.get("category") == "待归类·资料杂项"),
+        "pending": sum(1 for b in out_books + out_scans if b.get("category") == "未分类"),
         "suspect": sum(1 for b in out_books if b.get("suspect")),
         "no_douban": sum(1 for b in out_books if not b.get("rating")),
     })
@@ -281,6 +306,13 @@ def main():
         "stats": stats,
         "meta": {
             "root_name": None if public else (load_config().get("source_name") or ""),
+            # 本机库根的绝对路径：书卡的「复制路径 / 打开」要用它拼出可直接粘贴到
+            # 资源管理器地址栏的完整路径。浏览器读不到盘符，只能在这里带一次。
+            # 公开构建（build_public.py）不写这个字段。
+            "root_abs": None if public else (load_config().get("source_root") or ""),
+            # 书单版本戳：重建书单（比如按磁盘现状清掉已删的书）后必须变，
+            # 浏览器端靠它判断「本机存的那份书单是不是该丢掉了」。
+            "libver": None if public else ((src.get("meta") or {}).get("libver") or ""),
             "book_ext": BOOK_EXT,
             "counts": {"books": len(out_books), "scansets": len(out_scans)},
         },
@@ -330,6 +362,11 @@ def main():
     if os.path.exists(readingmerge_path):
         with open(readingmerge_path, "r", encoding="utf-8") as f:
             readingmerge_js = f.read().replace("</", "<\\/")
+    classify_path = os.path.join(ROOT, "scripts", "bookclassify.js")
+    classify_js = ""
+    if os.path.exists(classify_path):
+        with open(classify_path, "r", encoding="utf-8") as f:
+            classify_js = f.read().replace("</", "<\\/")
     pack_path = os.path.join(ROOT, "scripts", "douban_pack.json")
     pack_js = '{"items":[]}'
     pack_n = 0
@@ -344,6 +381,7 @@ def main():
                .replace("__DOUBAN_PACK__", pack_js)
                .replace("__SCAN_JS__", scan_js)
                .replace("__EXACTDUP_JS__", exactdup_js)
+               .replace("__CLASSIFY_JS__", classify_js)
                .replace("__READINGMERGE_JS__", readingmerge_js))
     out = out_path()
     with open(out, "w", encoding="utf-8") as f:

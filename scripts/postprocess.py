@@ -24,7 +24,7 @@ RAW = os.path.join(ROOT, "data", "books.raw.json")
 ENRICHED = os.path.join(ROOT, "data", "douban_enriched.json")
 OUT = os.path.join(ROOT, "data", "books.merged.json")
 
-PENDING = "待归类·资料杂项"
+PENDING = "未分类"
 
 JUNK_TOKEN = re.compile(
     r"(kindle电子书|kindle正版|kindle版|电子书|说明书|样章|试读|"

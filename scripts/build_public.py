@@ -16,6 +16,7 @@ EXACTDUP = os.path.join(ROOT, "scripts", "exactdup.js")
 DEMO = os.path.join(ROOT, "scripts", "demo_library.json")
 PACK = os.path.join(ROOT, "scripts", "douban_pack.json")
 READINGMERGE = os.path.join(ROOT, "scripts", "readingmerge.js")
+CLASSIFY = os.path.join(ROOT, "scripts", "bookclassify.js")
 DOCS = os.path.join(ROOT, "docs")
 OUT = os.path.join(DOCS, "index.html")
 
@@ -95,6 +96,11 @@ def main():
         with open(READINGMERGE, "r", encoding="utf-8") as f:
             readingmerge_js = f.read().replace("</", "<\\/")
     assert readingmerge_js, "缺少 scripts/readingmerge.js：阅读清单解析模块未注入"
+    classify_js = ""
+    if os.path.exists(CLASSIFY):
+        with open(CLASSIFY, "r", encoding="utf-8") as f:
+            classify_js = f.read().replace("</", "<\\/")
+    assert classify_js, "缺少 scripts/bookclassify.js：13 类分类模块未注入"
     pack_js, pack_n = '{"items":[]}', 0
     if os.path.exists(PACK):
         with open(PACK, "r", encoding="utf-8") as f:
@@ -107,12 +113,13 @@ def main():
                 .replace("__DOUBAN_PACK__", pack_js)
                 .replace("__SCAN_JS__", scan_js)
                 .replace("__EXACTDUP_JS__", exactdup_js)
+                .replace("__CLASSIFY_JS__", classify_js)
                 .replace("__READINGMERGE_JS__", readingmerge_js))
 
     for bad in BAD[:4]:
         assert bad not in html, "成品页面含禁止特征：" + repr(bad)
     for ph in ("__LIBRARY_DATA__", "__DOUBAN_PACK__", "__SCAN_JS__",
-               "__EXACTDUP_JS__", "__READINGMERGE_JS__"):
+               "__EXACTDUP_JS__", "__CLASSIFY_JS__", "__READINGMERGE_JS__"):
         assert ph not in html, "占位符未替换：" + ph
 
     os.makedirs(DOCS, exist_ok=True)
